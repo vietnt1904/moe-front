@@ -416,7 +416,7 @@ const Header = () => {
                 <Menu.Dropdown>
                   <Menu.Item
                     component="a" // Or Link
-                    href="/author/registeruser"
+                    href="/signup"
                   >
                     <Text size="lg" fw="bold" className="!text-black">
                       Tạo tài khoản
@@ -428,7 +428,7 @@ const Header = () => {
                   </Menu.Item>
                   <Menu.Item
                     component="a" // Or Link
-                    href="/author/loginuser"
+                    href="/login"
                   >
                     <Text size="lg" fw="bold" className="!text-black">
                       Đăng nhập

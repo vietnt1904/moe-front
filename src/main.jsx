@@ -18,6 +18,8 @@ import PendingShopDetail from "./pages/PendingShopDetailPage.jsx";
 import PendingShopListPage from "./pages/PendingShopListPage.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import '@mantine/carousel/styles.css';
+import LoginPage from "./pages/LoginPage.jsx";
+import SignUpPage from "./pages/SignUpPage.jsx";
 
 const router = createBrowserRouter([
     {
@@ -42,6 +44,18 @@ const router = createBrowserRouter([
             }
         ],
     },
+    {
+        path: "/login",
+        element: <LoginPage />,
+    },
+    {
+        path: "signup",
+        element: <SignUpPage />,
+    },
+    {
+        path: "*",
+        element: <ErrorPage />,
+    }
 ]);
 
 const queryClient = new QueryClient({

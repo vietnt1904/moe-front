@@ -6,8 +6,10 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 
 const HomePage = () => {
+  const displayDefault = 4;
+  const seeMore = 4;
 
-    const [visibleProducts, setVisibleProducts] = useState(4); // Show 10 products initially
+    const [visibleProducts, setVisibleProducts] = useState(displayDefault); // Show 10 products initially
 
     const data = [
         { id: 1, title: "Product 1", image: "https://upload-os-bbs.hoyolab.com/upload/2023/12/19/17138284/898721050c498b27389d23fa43f53fd8_5145071566460184172.jpeg?x-oss-process=image%2Fresize%2Cs_1000%2Fauto-orient%2C0%2Finterlace%2C1%2Fformat%2Cwebp%2Fquality%2Cq_70" },
@@ -32,9 +34,9 @@ const HomePage = () => {
   const handleToggle = (e) => {
     e.preventDefault(); // Prevent page reload
     if (visibleProducts < products.length) {
-      setVisibleProducts(visibleProducts + 4); // Show all products (20 in this case)
+      setVisibleProducts(visibleProducts + seeMore); // Show all products (20 in this case)
     } else {
-      setVisibleProducts(4); // Show only 10 products
+      setVisibleProducts(displayDefault); // Show only 10 products
     }
   };
 
@@ -249,7 +251,7 @@ const HomePage = () => {
             <p className="text-2xl font-bold">Hiển thị xem thêm</p>
             <img src="https://png.pngtree.com/png-vector/20221227/ourmid/pngtree-orange-cartoon-cute-flame-png-image_6510196.png" alt="trending" className="w-6 h-6 mx-2" />
         </div>
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
         {products.slice(0, visibleProducts).map((product) => (
           <div key={product.id} className="rounded-lg overflow-hidden">
             {/* Link to product detail page */}
@@ -257,7 +259,7 @@ const HomePage = () => {
               <img
                 src={product.image}
                 alt={product.title}
-                className="w-full h-48 object-cover"
+                className="w-full h-auto object-cover"
               />
             </Link>
           </div>
