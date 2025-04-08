@@ -27,7 +27,7 @@ const Footer = () => {
                         </div>
 
                         <div className="w-full lg:w-1/2 space-y-2 mb-6 lg:mb-0">
-                            <a href={homePath} className="block text-4xl md:text-5xl font-bold no-underline hover:opacity-80">
+                            <a href={homePath} className="block text-4xl md:text-5xl font-bold no-underline">
                                 Moe novel
                             </a>
                             <div className="flex  justify-around md:block">

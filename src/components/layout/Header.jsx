@@ -35,7 +35,7 @@ const Header = () => {
 
   const textColor = "black";
 
-  const isAuthenticated = false;
+  const isAuthenticated = true;
   const user = {
     name: "Current User",
     avatarUrl:

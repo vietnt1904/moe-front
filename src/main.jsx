@@ -21,6 +21,7 @@ import '@mantine/carousel/styles.css';
 import LoginPage from "./pages/LoginPage.jsx";
 import SignUpPage from "./pages/SignUpPage.jsx";
 import WriteStory from "./pages/WriteStory.jsx";
+import SettingPage from "./pages/SettingPage.jsx";
 
 const router = createBrowserRouter([
     {
@@ -34,6 +35,10 @@ const router = createBrowserRouter([
             {
                 index: true,
                 element: <HomePage />,
+            },
+            {
+                path: "/setting",
+                element: <SettingPage />,
             },
             {
                 path: "/pendingshops/",
