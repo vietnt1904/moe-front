@@ -4,6 +4,7 @@ import Autoplay from "embla-carousel-autoplay";
 import { Button } from "@mantine/core";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useMediaQuery } from "@mantine/hooks";
 
 const HomePage = () => {
   const displayDefault = 4;
@@ -30,6 +31,7 @@ const HomePage = () => {
   const autoplay = useRef(Autoplay({ delay: 2000 }));
   const autoplayItem = useRef(Autoplay({ delay: 1500 }));
   const autoplayItem2 = useRef(Autoplay({ delay: 1500 }));
+  const isLargeScreen = useMediaQuery('(min-width: 1024px)');
 
   const handleToggle = (e) => {
     e.preventDefault(); // Prevent page reload
@@ -41,13 +43,13 @@ const HomePage = () => {
   };
 
   return (
-    <div className="w-11/12 items-center mx-auto my-12">
+    <div className="w-9/12 items-center mx-auto my-12">
         {/* Carousel */}
       <div className="w-full rounded-3xl overflow-hidden shadow-[4px_4px_4px_4px_rgba(0,0,0,0.4)] mb-12">
         <Carousel
           style={{ borderRadius: "20px" }}
           withIndicators
-          height={500}
+          className="max-h-[600px] h-auto lg:h-[600px]"
           plugins={[autoplay.current]}
           onMouseEnter={autoplay.current.play}
           onMouseLeave={autoplay.current.reset}
@@ -98,63 +100,63 @@ const HomePage = () => {
           <Carousel.Slide>
             <img
                 className="rounded-xl"
-              src="https://ocafe.net/wp-content/uploads/2024/10/anh-nen-may-tinh-4k-1.jpg"
+              src="https://cdn.openart.ai/stable_diffusion/6433c93336bd0fbfae112298d4428e33635aa789_2000x2000.webp"
               alt="ảnh slide"
             />
           </Carousel.Slide>
           <Carousel.Slide>
             <img
                 className="rounded-xl"
-              src="https://ocafe.net/wp-content/uploads/2024/10/anh-nen-may-tinh-4k-1.jpg"
+              src="https://cdn.openart.ai/stable_diffusion/6433c93336bd0fbfae112298d4428e33635aa789_2000x2000.webp"
               alt="ảnh slide"
             />
           </Carousel.Slide>
           <Carousel.Slide>
             <img
                 className="rounded-xl"
-              src="https://ocafe.net/wp-content/uploads/2024/10/anh-nen-may-tinh-4k-1.jpg"
+              src="https://cdn.openart.ai/stable_diffusion/6433c93336bd0fbfae112298d4428e33635aa789_2000x2000.webp"
               alt="ảnh slide"
             />
           </Carousel.Slide>
           <Carousel.Slide>
             <img
                 className="rounded-xl"
-              src="https://ocafe.net/wp-content/uploads/2024/10/anh-nen-may-tinh-4k-1.jpg"
+              src="https://cdn.openart.ai/stable_diffusion/6433c93336bd0fbfae112298d4428e33635aa789_2000x2000.webp"
               alt="ảnh slide"
             />
           </Carousel.Slide>
           <Carousel.Slide>
             <img
                 className="rounded-xl"
-              src="https://ocafe.net/wp-content/uploads/2024/10/anh-nen-may-tinh-4k-1.jpg"
+              src="https://cdn.openart.ai/stable_diffusion/6433c93336bd0fbfae112298d4428e33635aa789_2000x2000.webp"
               alt="ảnh slide"
             />
           </Carousel.Slide>
           <Carousel.Slide>
             <img
                 className="rounded-xl"
-              src="https://ocafe.net/wp-content/uploads/2024/10/anh-nen-may-tinh-4k-1.jpg"
+              src="https://cdn.openart.ai/stable_diffusion/6433c93336bd0fbfae112298d4428e33635aa789_2000x2000.webp"
               alt="ảnh slide"
             />
           </Carousel.Slide>
           <Carousel.Slide>
             <img
                 className="rounded-xl"
-              src="https://ocafe.net/wp-content/uploads/2024/10/anh-nen-may-tinh-4k-1.jpg"
+              src="https://cdn.openart.ai/stable_diffusion/6433c93336bd0fbfae112298d4428e33635aa789_2000x2000.webp"
               alt="ảnh slide"
             />
           </Carousel.Slide>
           <Carousel.Slide>
             <img
                 className="rounded-xl"
-              src="https://ocafe.net/wp-content/uploads/2024/10/anh-nen-may-tinh-4k-1.jpg"
+              src="https://cdn.openart.ai/stable_diffusion/6433c93336bd0fbfae112298d4428e33635aa789_2000x2000.webp"
               alt="ảnh slide"
             />
           </Carousel.Slide>
           <Carousel.Slide>
             <img
                 className="rounded-xl"
-              src="https://ocafe.net/wp-content/uploads/2024/10/anh-nen-may-tinh-4k-1.jpg"
+              src="https://cdn.openart.ai/stable_diffusion/6433c93336bd0fbfae112298d4428e33635aa789_2000x2000.webp"
               alt="ảnh slide"
             />
           </Carousel.Slide>
@@ -182,63 +184,63 @@ const HomePage = () => {
           <Carousel.Slide>
             <img
                 className="rounded-xl h-auto"
-              src="https://ocafe.net/wp-content/uploads/2024/10/anh-nen-may-tinh-4k-1.jpg"
+              src="https://cdn.openart.ai/stable_diffusion/6433c93336bd0fbfae112298d4428e33635aa789_2000x2000.webp"
               alt="ảnh slide"
             />
           </Carousel.Slide>
           <Carousel.Slide>
             <img
                 className="rounded-xl"
-              src="https://ocafe.net/wp-content/uploads/2024/10/anh-nen-may-tinh-4k-1.jpg"
+              src="https://cdn.openart.ai/stable_diffusion/6433c93336bd0fbfae112298d4428e33635aa789_2000x2000.webp"
               alt="ảnh slide"
             />
           </Carousel.Slide>
           <Carousel.Slide>
             <img
                 className="rounded-xl"
-              src="https://ocafe.net/wp-content/uploads/2024/10/anh-nen-may-tinh-4k-1.jpg"
+              src="https://cdn.openart.ai/stable_diffusion/6433c93336bd0fbfae112298d4428e33635aa789_2000x2000.webp"
               alt="ảnh slide"
             />
           </Carousel.Slide>
           <Carousel.Slide>
             <img
                 className="rounded-xl"
-              src="https://ocafe.net/wp-content/uploads/2024/10/anh-nen-may-tinh-4k-1.jpg"
+              src="https://cdn.openart.ai/stable_diffusion/6433c93336bd0fbfae112298d4428e33635aa789_2000x2000.webp"
               alt="ảnh slide"
             />
           </Carousel.Slide>
           <Carousel.Slide>
             <img
                 className="rounded-xl"
-              src="https://ocafe.net/wp-content/uploads/2024/10/anh-nen-may-tinh-4k-1.jpg"
+              src="https://cdn.openart.ai/stable_diffusion/6433c93336bd0fbfae112298d4428e33635aa789_2000x2000.webp"
               alt="ảnh slide"
             />
           </Carousel.Slide>
           <Carousel.Slide>
             <img
                 className="rounded-xl"
-              src="https://ocafe.net/wp-content/uploads/2024/10/anh-nen-may-tinh-4k-1.jpg"
+              src="https://cdn.openart.ai/stable_diffusion/6433c93336bd0fbfae112298d4428e33635aa789_2000x2000.webp"
               alt="ảnh slide"
             />
           </Carousel.Slide>
           <Carousel.Slide>
             <img
                 className="rounded-xl"
-              src="https://ocafe.net/wp-content/uploads/2024/10/anh-nen-may-tinh-4k-1.jpg"
+              src="https://cdn.openart.ai/stable_diffusion/6433c93336bd0fbfae112298d4428e33635aa789_2000x2000.webp"
               alt="ảnh slide"
             />
           </Carousel.Slide>
           <Carousel.Slide>
             <img
                 className="rounded-xl"
-              src="https://ocafe.net/wp-content/uploads/2024/10/anh-nen-may-tinh-4k-1.jpg"
+              src="https://cdn.openart.ai/stable_diffusion/6433c93336bd0fbfae112298d4428e33635aa789_2000x2000.webp"
               alt="ảnh slide"
             />
           </Carousel.Slide>
           <Carousel.Slide>
             <img
                 className="rounded-xl"
-              src="https://ocafe.net/wp-content/uploads/2024/10/anh-nen-may-tinh-4k-1.jpg"
+              src="https://cdn.openart.ai/stable_diffusion/6433c93336bd0fbfae112298d4428e33635aa789_2000x2000.webp"
               alt="ảnh slide"
             />
           </Carousel.Slide>
@@ -266,7 +268,9 @@ const HomePage = () => {
         ))}
         </div>
         <div className="flex justify-center mt-8">
-            <Button onClick={handleToggle} color="yellow">{visibleProducts >= products.length ? "Ẩn bớt" : "Xem thêm"}</Button>
+            <Button size={isLargeScreen ? 'lg' : 'sm'} onClick={handleToggle} color="yellow">
+              <p className="text-md lg:text-xl">{visibleProducts >= products.length ? "Ẩn bớt" : "Xem thêm"}</p>
+            </Button>
         </div>
       </div>
 

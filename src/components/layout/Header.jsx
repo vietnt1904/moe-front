@@ -23,6 +23,7 @@ import { IconSwitchHorizontal } from "@tabler/icons-react";
 import { IconCheck } from "@tabler/icons-react";
 import { IconEdit } from "@tabler/icons-react";
 import { IconChevronDown } from "@tabler/icons-react";
+import { Link } from "react-router-dom";
 
 const Header = () => {
   const categories = [
@@ -79,11 +80,11 @@ const Header = () => {
 
   return (
     <div className="bg-[linear-gradient(141.39deg,_#9AFDF7_3.43%,_rgb(212,239,244)_86.18%)] shadow-[0px_4px_4px_rgba(0,0,0,0.5)]">
-      <div className="w-11/12 mx-auto py-4 flex justify-between items-center align-bottom">
+      <div className="w-9/12 mx-auto py-4 flex justify-between items-center align-bottom">
         {/* Logo */}
         <a
           href="/"
-          className="text-4xl font-black italic text-gray-900 no-underline mr-12"
+          className="text-3xl lg:text-5xl font-black italic text-gray-900 no-underline mr-12"
         >
           Moe novel
         </a>
@@ -108,7 +109,7 @@ const Header = () => {
               position="bottom-start"
             >
               <Menu.Target>
-                <p className="text-lg font-extrabold text-gray-900 flex italic mx-4 items-center hover:cursor-pointer">
+                <p className="text-lg lg:text-2xl font-extrabold text-gray-900 flex italic mx-4 items-center hover:cursor-pointer">
                   Thể loại
                 </p>
               </Menu.Target>
@@ -125,30 +126,30 @@ const Header = () => {
                     key={category.id}
                     className="font-sans hover:bg-blue-300 rounded"
                   >
-                    <a href="/" className="text-dark no-underline">
+                    <a href="/" className="text-dark no-underline lg:text-lg">
                       {category.namecategory}
                     </a>
                   </Menu.Item>
                 ))}
               </Menu.Dropdown>
             </Menu>
-            <a
-              href="/"
-              className="text-lg font-extrabold text-gray-900 no-underline italic"
+            <Link
+              to={"/writestory"}
+              className="text-lg lg:text-2xl font-extrabold text-gray-900 no-underline italic"
             >
               Viết truyện
-            </a>
+            </Link>
             {isAuthenticated ? (
               <a
                 href="/"
-                className="text-lg font-extrabold text-gray-900 no-underline italic"
+                className="text-lg lg:text-2xl font-extrabold text-gray-900 no-underline italic"
               >
                 Nạp xu
               </a>
             ) : (
               <a
                 href="/news"
-                className="text-lg font-extrabold text-gray-900 no-underline italic"
+                className="text-lg lg:text-2xl font-extrabold text-gray-900 no-underline italic"
               >
                 Tin tức
               </a>
@@ -446,8 +447,8 @@ const Header = () => {
 
       {/* Mobile Menu */}
       {opened && (
-        <div className="lg:hidden p-4">
-          <div className="flex justify-around">
+        <div className="lg:hidden flex flex-col justify-center pb-4 w-3/4 mx-auto">
+          <div className="flex justify-between">
             <Menu
               shadow="md"
               width={240}
@@ -504,7 +505,7 @@ const Header = () => {
           </div>
 
           {/* User Menu / Login */}
-          <div className="flex items-center justify-around">
+          <div className="flex items-center justify-between">
             <ActionIcon
               component="a"
               href="/premium" // Replace with premium link

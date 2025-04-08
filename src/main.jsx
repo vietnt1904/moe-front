@@ -20,6 +20,7 @@ import HomePage from "./pages/HomePage.jsx";
 import '@mantine/carousel/styles.css';
 import LoginPage from "./pages/LoginPage.jsx";
 import SignUpPage from "./pages/SignUpPage.jsx";
+import WriteStory from "./pages/WriteStory.jsx";
 
 const router = createBrowserRouter([
     {
@@ -27,7 +28,11 @@ const router = createBrowserRouter([
         element: <Layout />,
         children: [
             {
-                path: "/",
+                path: "/writestory",
+                element: <WriteStory />,
+            },
+            {
+                index: true,
                 element: <HomePage />,
             },
             {
