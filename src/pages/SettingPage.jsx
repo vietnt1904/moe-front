@@ -17,6 +17,8 @@ import {
 } from "@mantine/core";
 import { IconCamera } from "@tabler/icons-react"; // Example icon
 import PropTypes from "prop-types";
+import { useSearchParams } from "react-router-dom";
+import { set } from "react-hook-form";
 
 // --- Placeholder Data ---
 // In a real app, fetch this data or get it from context/props
@@ -479,9 +481,12 @@ const UpdateInfoForm = ({onUpdateClick}) => {
 // --- Main Settings Page Component ---
 
 const SettingPage = () => {
+  const [searchParams] = useSearchParams();
+  const tab = searchParams.get("tab");
   // State to track the active section
-  const [activeSection, setActiveSection] = useState("notifications"); // Default section
+  const [activeSection, setActiveSection] = useState(tab || "notifications"); // Default section
   console.log("Active section:", activeSection);
+  console.log("Tab:", tab);
 
   const menuItems = [
     {

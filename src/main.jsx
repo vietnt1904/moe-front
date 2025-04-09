@@ -22,6 +22,9 @@ import LoginPage from "./pages/LoginPage.jsx";
 import SignUpPage from "./pages/SignUpPage.jsx";
 import WriteStory from "./pages/WriteStory.jsx";
 import SettingPage from "./pages/SettingPage.jsx";
+import HistoryPage from "./pages/HistoryPage.jsx";
+import MessagePage from "./pages/MessagePage.jsx";
+import LayoutHeader from "./components/LayoutHeader.jsx";
 
 const router = createBrowserRouter([
     {
@@ -41,6 +44,10 @@ const router = createBrowserRouter([
                 element: <SettingPage />,
             },
             {
+                path: "/history",
+                element: <HistoryPage />,
+            },
+            {
                 path: "/pendingshops/",
                 element: <PendingShopListPage />,
             },
@@ -53,6 +60,16 @@ const router = createBrowserRouter([
                 element: <ErrorPage />,
             }
         ],
+    },
+    {
+        path: "/",
+        element: <LayoutHeader />,
+        children: [
+            {
+                path: "/message",
+                element: <MessagePage />,
+            }
+        ]
     },
     {
         path: "/login",

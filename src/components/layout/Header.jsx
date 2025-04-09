@@ -140,12 +140,12 @@ const Header = () => {
               Viết truyện
             </Link>
             {isAuthenticated ? (
-              <a
-                href="/"
+              <Link
+                to="/setting?tab=payment"
                 className="text-lg lg:text-2xl font-extrabold text-gray-900 no-underline italic"
               >
                 Nạp xu
-              </a>
+              </Link>
             ) : (
               <a
                 href="/news"
@@ -293,92 +293,100 @@ const Header = () => {
                   >
                     <p className={`text-${textColor}`}>Đổi tài khoản</p>
                   </Menu.Item>
-                  <Menu.Item
-                    leftSection={
-                      <IconSettings color={textColor} size={18} stroke={1.5} />
-                    }
-                    component="a"
-                    href="/setting"
-                    color={textColor}
-                  >
-                    <p className={`text-${textColor}`}>Cài đặt</p>
-                  </Menu.Item>
+                  <Link to="setting">
+                    <Menu.Item
+                      leftSection={
+                        <IconSettings
+                          color={textColor}
+                          size={18}
+                          stroke={1.5}
+                        />
+                      }
+                      color={textColor}
+                    >
+                      <p className={`text-${textColor}`}>Cài đặt</p>
+                    </Menu.Item>
+                  </Link>
 
                   <Menu.Divider style={dropdownStyles.divider} />
 
-                  <Menu.Item
-                    leftSection={
-                      <IconBookmark color={textColor} size={18} stroke={1.5} />
-                    }
-                    component="a"
-                    href="/saved"
-                    color={textColor}
-                  >
-                    <p className={`text-${textColor}`}>Đã lưu</p>
-                  </Menu.Item>
-                  <Menu.Item
-                    leftSection={
-                      <IconList color={textColor} size={18} stroke={1.5} />
-                    }
-                    component="a"
-                    href="/mylists"
-                    color={textColor}
-                  >
-                    <p className={`text-${textColor}`}>Danh sách của bạn</p>
-                  </Menu.Item>
-                  <Menu.Item
-                    leftSection={
-                      <IconHistory color={textColor} size={18} stroke={1.5} />
-                    }
-                    component="a"
-                    href="/history"
-                    color={textColor}
-                  >
-                    <p className={`text-${textColor}`}>Lịch sử</p>
-                  </Menu.Item>
-                  <Menu.Item
-                    leftSection={
-                      <IconPencil color={textColor} size={18} stroke={1.5} />
-                    }
-                    component="a"
-                    href="/poststory"
-                    color={textColor}
-                  >
-                    <p className={`text-${textColor}`}>Viết truyện</p>
-                  </Menu.Item>
+                  <Link to="saved">
+                    <Menu.Item
+                      leftSection={
+                        <IconBookmark
+                          color={textColor}
+                          size={18}
+                          stroke={1.5}
+                        />
+                      }
+                      color={textColor}
+                    >
+                      <p className={`text-${textColor}`}>Đã lưu</p>
+                    </Menu.Item>
+                  </Link>
+                  <Link to="mylist">
+                    <Menu.Item
+                      leftSection={
+                        <IconList color={textColor} size={18} stroke={1.5} />
+                      }
+                      color={textColor}
+                    >
+                      <p className={`text-${textColor}`}>Danh sách của bạn</p>
+                    </Menu.Item>
+                  </Link>
+                  <Link to="history">
+                    <Menu.Item
+                      leftSection={
+                        <IconHistory color={textColor} size={18} stroke={1.5} />
+                      }
+                      color={textColor}
+                    >
+                      <p className={`text-${textColor}`}>Lịch sử</p>
+                    </Menu.Item>
+                  </Link>
+                  <Link to="/writestory">
+                    <Menu.Item
+                      leftSection={
+                        <IconPencil color={textColor} size={18} stroke={1.5} />
+                      }
+                      color={textColor}
+                    >
+                      <p className={`text-${textColor}`}>Viết truyện</p>
+                    </Menu.Item>
+                  </Link>
 
                   <Menu.Divider style={dropdownStyles.divider} />
 
-                  <Menu.Item
-                    leftSection={
-                      <IconBell color={textColor} size={18} stroke={1.5} />
-                    }
-                    component="a"
-                    href="/notifications"
-                    color={textColor}
-                  >
-                    <p className={`text-${textColor}`}>Thông báo</p>
-                  </Menu.Item>
-                  <Menu.Item
-                    leftSection={
-                      <IconMessage color={textColor} size={18} stroke={1.5} />
-                    }
-                    component="a"
-                    href="/messages"
-                    color={textColor}
-                  >
-                    <p className={`text-${textColor}`}>Nhắn tin</p>
-                  </Menu.Item>
-                  <Menu.Item
-                    leftSection={
-                      <IconHelp color={textColor} size={18} stroke={1.5} />
-                    }
-                    component="a"
-                    href="/qa"
-                    color={textColor}
-                  >
-                    <p className={`text-${textColor}`}>Q&A</p>
-                  </Menu.Item>
+                  <Link to="notification">
+                    <Menu.Item
+                      leftSection={
+                        <IconBell color={textColor} size={18} stroke={1.5} />
+                      }
+                      color={textColor}
+                    >
+                      <p className={`text-${textColor}`}>Thông báo</p>
+                    </Menu.Item>
+                  </Link>
+                  <Link to="message">
+                    <Menu.Item
+                      leftSection={
+                        <IconMessage color={textColor} size={18} stroke={1.5} />
+                      }
+                      color={textColor}
+                    >
+                      <p className={`text-${textColor}`}>Nhắn tin</p>
+                    </Menu.Item>
+                  </Link>
+                  <Link to="qa">
+                    <Menu.Item
+                      leftSection={
+                        <IconHelp color={textColor} size={18} stroke={1.5} />
+                      }
+                      color={textColor}
+                    >
+                      <p className={`text-${textColor}`}>Q&A</p>
+                    </Menu.Item>
+                  </Link>
 
                   <Menu.Divider style={dropdownStyles.divider} />
 
@@ -488,12 +496,12 @@ const Header = () => {
               Viết truyện
             </a>
             {isAuthenticated ? (
-              <a
-                href="/setting"
+              <Link
+                to="/setting?tab=payment"
                 className="text-lg font-extrabold text-gray-900 no-underline italic"
               >
                 Nạp xu
-              </a>
+              </Link>
             ) : (
               <a
                 href="/news"
@@ -791,7 +799,6 @@ const Header = () => {
             )}
           </div>
         </div>
-        
       )}
     </div>
   );
