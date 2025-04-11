@@ -97,9 +97,7 @@ const Header = () => {
           <IconChevronDown size={24} />
         </button>
 
-        {/* Desktop Navigation */}
         <div className="hidden lg:flex flex-grow justify-between items-center">
-          {/* Main Navigation Links */}
           <div className="flex space-x-8">
             <Menu
               shadow="md"
@@ -188,21 +186,17 @@ const Header = () => {
                     src="/images/Search.png"
                     alt="Search icon"
                   />
-                  {/* <IconSearch size={32} stroke={1.5} /> */}
                 </ActionIcon>
               </Menu.Target>
               <Menu.Dropdown
                 p="xs"
                 className="!bg-transparent !border-none !shadow-none"
               >
-                {/* Prevent default dropdown styling */}
                 <form action="/search" method="GET" className="flex">
-                  {" "}
-                  {/* Replace with your search logic */}
                   <TextInput
                     placeholder="Tìm kiếm"
                     name="key_word"
-                    className="flex-grow search-story" // Add search-story if needed for JS
+                    className="flex-grow search-story"
                     rightSection={
                       <ActionIcon
                         type="submit"
@@ -213,7 +207,6 @@ const Header = () => {
                       </ActionIcon>
                     }
                   />
-                  {/* Add search result dropdown logic here if needed */}
                 </form>
               </Menu.Dropdown>
             </Menu>
@@ -237,10 +230,8 @@ const Header = () => {
                 </Menu.Target>
 
                 <Menu.Dropdown>
-                  {/* Profile Link Item */}
+                  <Link to="/profile">
                   <Menu.Item
-                    component="a" // Or Link
-                    href="/profile" // route('profile')
                     className="!p-0 !m-0 !w-full !rounded-none !bg-transparent"
                     style={{ background: "transparent !important" }}
                   >
@@ -249,7 +240,7 @@ const Header = () => {
                         src={user.avatarUrl}
                         alt="Account item"
                         radius="xl"
-                        size="md" // Slightly smaller avatar inside dropdown
+                        size="md"
                         className="border-2 border-white"
                       />
                       <div>
@@ -276,6 +267,7 @@ const Header = () => {
                       </div>
                     </div>
                   </Menu.Item>
+                  </Link>
 
                   <Menu.Divider style={dropdownStyles.divider} />
 

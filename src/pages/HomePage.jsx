@@ -5,6 +5,7 @@ import { Button } from "@mantine/core";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMediaQuery } from "@mantine/hooks";
+import StoryCard from '../components/StoryCard';
 
 const HomePage = () => {
   const displayDefault = 4;
@@ -41,6 +42,22 @@ const HomePage = () => {
       setVisibleProducts(displayDefault); // Show only 10 products
     }
   };
+
+  const dataForCarousel = [
+    { id: 1, title: "Product 1", image: "https://upload-os-bbs.hoyolab.com/upload/2023/12/19/17138284/898721050c498b27389d23fa43f53fd8_5145071566460184172.jpeg?x-oss-process=image%2Fresize%2Cs_1000%2Fauto-orient%2C0%2Finterlace%2C1%2Fformat%2Cwebp%2Fquality%2Cq_70" },
+    { id: 2, title: "Product 2", image: "https://upload-os-bbs.hoyolab.com/upload/2023/12/19/17138284/898721050c498b27389d23fa43f53fd8_5145071566460184172.jpeg?x-oss-process=image%2Fresize%2Cs_1000%2Fauto-orient%2C0%2Finterlace%2C1%2Fformat%2Cwebp%2Fquality%2Cq_70" },
+    { id: 3, title: "Product 3", image: "https://upload-os-bbs.hoyolab.com/upload/2023/12/19/17138284/898721050c498b27389d23fa43f53fd8_5145071566460184172.jpeg?x-oss-process=image%2Fresize%2Cs_1000%2Fauto-orient%2C0%2Finterlace%2C1%2Fformat%2Cwebp%2Fquality%2Cq_70" },
+    { id: 4, title: "Product 4", image: "https://upload-os-bbs.hoyolab.com/upload/2023/12/19/17138284/898721050c498b27389d23fa43f53fd8_5145071566460184172.jpeg?x-oss-process=image%2Fresize%2Cs_1000%2Fauto-orient%2C0%2Finterlace%2C1%2Fformat%2Cwebp%2Fquality%2Cq_70" },
+    { id: 5, title: "Product 5", image: "https://upload-os-bbs.hoyolab.com/upload/2023/12/19/17138284/898721050c498b27389d23fa43f53fd8_5145071566460184172.jpeg?x-oss-process=image%2Fresize%2Cs_1000%2Fauto-orient%2C0%2Finterlace%2C1%2Fformat%2Cwebp%2Fquality%2Cq_70" },
+    { id: 6, title: "Product 6", image: "https://upload-os-bbs.hoyolab.com/upload/2023/12/19/17138284/898721050c498b27389d23fa43f53fd8_5145071566460184172.jpeg?x-oss-process=image%2Fresize%2Cs_1000%2Fauto-orient%2C0%2Finterlace%2C1%2Fformat%2Cwebp%2Fquality%2Cq_70" },
+    { id: 7, title: "Product 7", image: "https://upload-os-bbs.hoyolab.com/upload/2023/12/19/17138284/898721050c498b27389d23fa43f53fd8_5145071566460184172.jpeg?x-oss-process=image%2Fresize%2Cs_1000%2Fauto-orient%2C0%2Finterlace%2C1%2Fformat%2Cwebp%2Fquality%2Cq_70" },
+    { id: 8, title: "Product 8", image: "https://upload-os-bbs.hoyolab.com/upload/2023/12/19/17138284/898721050c498b27389d23fa43f53fd8_5145071566460184172.jpeg?x-oss-process=image%2Fresize%2Cs_1000%2Fauto-orient%2C0%2Finterlace%2C1%2Fformat%2Cwebp%2Fquality%2Cq_70" },
+    { id: 9, title: "Product 9", image: "https://upload-os-bbs.hoyolab.com/upload/2023/12/19/17138284/898721050c498b27389d23fa43f53fd8_5145071566460184172.jpeg?x-oss-process=image%2Fresize%2Cs_1000%2Fauto-orient%2C0%2Finterlace%2C1%2Fformat%2Cwebp%2Fquality%2Cq_70" },
+    { id: 10, title: "Product 10", image: "https://upload-os-bbs.hoyolab.com/upload/2023/12/19/17138284/898721050c498b27389d23fa43f53fd8_5145071566460184172.jpeg?x-oss-process=image%2Fresize%2Cs_1000%2Fauto-orient%2C0%2Finterlace%2C1%2Fformat%2Cwebp%2Fquality%2Cq_70" },
+    { id: 11, title: "Product 11", image: "https://upload-os-bbs.hoyolab.com/upload/2023/12/19/17138284/898721050c498b27389d23fa43f53fd8_5145071566460184172.jpeg?x-oss-process=image%2Fresize%2Cs_1000%2Fauto-orient%2C0%2Finterlace%2C1%2Fformat%2Cwebp%2Fquality%2Cq_70" },
+  ];
+
+  const [dataCarousel, setDataCarousel] = useState(dataForCarousel);
 
   return (
     <div className="w-9/12 items-center mx-auto my-12">
@@ -97,7 +114,12 @@ const HomePage = () => {
           onClick={autoplayItem.current.reset}
           align={"start"}
         >
-          <Carousel.Slide>
+          {dataCarousel.map((item) => (
+            <Carousel.Slide key={item.id}>
+              <StoryCard story={item} />
+            </Carousel.Slide>
+          ))}
+          {/* <Carousel.Slide>
             <img
                 className="rounded-xl"
               src="https://cdn.openart.ai/stable_diffusion/6433c93336bd0fbfae112298d4428e33635aa789_2000x2000.webp"
@@ -159,7 +181,7 @@ const HomePage = () => {
               src="https://cdn.openart.ai/stable_diffusion/6433c93336bd0fbfae112298d4428e33635aa789_2000x2000.webp"
               alt="ảnh slide"
             />
-          </Carousel.Slide>
+          </Carousel.Slide> */}
         </Carousel>
       </div>
 
@@ -254,13 +276,13 @@ const HomePage = () => {
             <img src="https://png.pngtree.com/png-vector/20221227/ourmid/pngtree-orange-cartoon-cute-flame-png-image_6510196.png" alt="trending" className="w-6 h-6 mx-2" />
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-        {products.slice(0, visibleProducts).map((product) => (
-          <div key={product.id} className="rounded-lg overflow-hidden">
-            {/* Link to product detail page */}
-            <Link to={`/products/${product.id}`} className="flex-1">
+        {products.slice(0, visibleProducts).map((story) => (
+          <div key={story?.id} className="rounded-lg overflow-hidden">
+            {/* Link to story? detail page */}
+            <Link to={`/story/${story?.id}`} onClick={() => window.scrollTo(0, 0)} className="flex-1">
               <img
-                src={product.image}
-                alt={product.title}
+                src={story?.image}
+                alt={story?.title}
                 className="w-full h-auto object-cover"
               />
             </Link>

@@ -14,8 +14,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import Layout from "./components/Layout.jsx";
 import ErrorPage from "./pages/ErrorPage.jsx";
-import PendingShopDetail from "./pages/PendingShopDetailPage.jsx";
-import PendingShopListPage from "./pages/PendingShopListPage.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import '@mantine/carousel/styles.css';
 import LoginPage from "./pages/LoginPage.jsx";
@@ -25,6 +23,11 @@ import SettingPage from "./pages/SettingPage.jsx";
 import HistoryPage from "./pages/HistoryPage.jsx";
 import MessagePage from "./pages/MessagePage.jsx";
 import LayoutHeader from "./components/LayoutHeader.jsx";
+import ProfilePage from "./pages/ProfilePage.jsx";
+import NotificationPage from "./pages/NotificationPage.jsx";
+import AuthorPage from "./pages/AuthorPage.jsx";
+import StoryPage from "./pages/StoryPage.jsx";
+import ChapterPage from "./pages/ChapterPage.jsx";
 
 const router = createBrowserRouter([
     {
@@ -32,12 +35,28 @@ const router = createBrowserRouter([
         element: <Layout />,
         children: [
             {
+                index: true,
+                element: <HomePage />,
+            },
+            {
+                path: "/story/:title",
+                element: <StoryPage />,
+            },
+            {
                 path: "/writestory",
                 element: <WriteStory />,
             },
             {
-                index: true,
-                element: <HomePage />,
+                path: "/profile",
+                element: <ProfilePage />,
+            },
+            {
+                path: "/notification",
+                element: <NotificationPage />,
+            },
+            {
+                path: "/author",
+                element: <AuthorPage />,
             },
             {
                 path: "/setting",
@@ -48,12 +67,8 @@ const router = createBrowserRouter([
                 element: <HistoryPage />,
             },
             {
-                path: "/pendingshops/",
-                element: <PendingShopListPage />,
-            },
-            {
-                path: "/pendingshop/:id",
-                element: <PendingShopDetail />,
+                path: "story/:title/:chapter",
+                element: <ChapterPage />,
             },
             {
                 path: "*",
