@@ -5,6 +5,7 @@ import "dayjs/locale/ru";
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
 import "@mantine/nprogress/styles.css";
+import "@mantine/notifications/styles.css";
 import { ModalsProvider } from '@mantine/modals';
 import { MantineProvider } from "@mantine/core";
 import { DatesProvider } from "@mantine/dates";
@@ -28,6 +29,10 @@ import NotificationPage from "./pages/NotificationPage.jsx";
 import AuthorPage from "./pages/AuthorPage.jsx";
 import StoryPage from "./pages/StoryPage.jsx";
 import ChapterPage from "./pages/ChapterPage.jsx";
+import UpdateStoryPage from "./pages/UpdateStoryPage.jsx";
+import WriteChapter from "./pages/WriteChapter.jsx";
+import SearchStoryPage from "./pages/SearchStoryPage.jsx";
+import BuildingPage from "./pages/BuildingPagel.jsx";
 
 const router = createBrowserRouter([
     {
@@ -43,6 +48,18 @@ const router = createBrowserRouter([
                 element: <StoryPage />,
             },
             {
+                path: "/story/author/:title",
+                element: <UpdateStoryPage />,
+            },
+            {
+                path: "/story/author/:title/writechapter",
+                element: <WriteChapter />
+            },
+            {
+                path: "/search",
+                element: <SearchStoryPage />,
+            },
+            {
                 path: "/writestory",
                 element: <WriteStory />,
             },
@@ -52,7 +69,8 @@ const router = createBrowserRouter([
             },
             {
                 path: "/notification",
-                element: <NotificationPage />,
+                element: <BuildingPage />,
+                // element: <NotificationPage />,
             },
             {
                 path: "/author",
@@ -64,14 +82,27 @@ const router = createBrowserRouter([
             },
             {
                 path: "/history",
-                element: <HistoryPage />,
+                // element: <HistoryPage />,
+                element: <BuildingPage />,
             },
             {
-                path: "story/:title/:chapter",
+                path: "/story/:title/:chapter",
                 element: <ChapterPage />,
             },
             {
-                path: "*",
+                path: "/saved",
+                element: <BuildingPage />,
+            },
+            {
+                path: "/mylist",
+                element: <BuildingPage />,
+            },
+            {
+                path: "/qa",
+                element: <BuildingPage />,
+            },
+            {
+                path: "/*",
                 element: <ErrorPage />,
             }
         ],
@@ -82,7 +113,8 @@ const router = createBrowserRouter([
         children: [
             {
                 path: "/message",
-                element: <MessagePage />,
+                // element: <MessagePage />,
+                element: <BuildingPage />,
             }
         ]
     },
@@ -91,11 +123,15 @@ const router = createBrowserRouter([
         element: <LoginPage />,
     },
     {
-        path: "signup",
+        path: "/signup",
         element: <SignUpPage />,
     },
     {
-        path: "*",
+        path: "/error",
+        element: <ErrorPage />,
+    },
+    {
+        path: "/*",
         element: <ErrorPage />,
     }
 ]);

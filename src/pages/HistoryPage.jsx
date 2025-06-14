@@ -1,4 +1,4 @@
-import { Container, Box, Title, Text, Image, Progress, Flex, Group } from '@mantine/core';
+import { Container, Box, Title, Text, Image, Progress, Flex } from '@mantine/core';
 
 // Sample data structure (replace with your actual data fetching/props)
 const historyData = [

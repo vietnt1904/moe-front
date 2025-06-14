@@ -13,22 +13,19 @@ import {
   TextInput,
   PasswordInput,
   Group,
-  Image, // Import Image from Mantine for QR code etc.
+  Image,
+  BackgroundImage,
+  FileButton, // Import Image from Mantine for QR code etc.
 } from "@mantine/core";
 import { IconCamera } from "@tabler/icons-react"; // Example icon
 import PropTypes from "prop-types";
 import { useSearchParams } from "react-router-dom";
-import { set } from "react-hook-form";
+import { useEffect } from "react";
+import { useUser } from "../hooks/useUser";
+import UserService from "../services/UserService";
 
 // --- Placeholder Data ---
 // In a real app, fetch this data or get it from context/props
-const mockUser = {
-  name: "Nguyễn Van A", // Placeholder
-  email: "nguyenvana@example.com", // Placeholder
-  avatar:
-    "https://cellphones.com.vn/sforum/wp-content/uploads/2024/02/anh-phong-canh-66-1.jpg",
-};
-
 // --- Sub-Components for Content Sections ---
 
 const NotificationSettings = () => {
@@ -87,10 +84,8 @@ const NotificationSettings = () => {
               size="md"
               color="rgba(95, 255, 46, 1)"
               styles={{
-                track: {
-                },
-                thumb: {
-                },
+                track: {},
+                thumb: {},
               }}
             />
           </Group>
@@ -109,6 +104,9 @@ const PersonalInfo = ({ onUpdateClick }) => {
   PersonalInfo.propTypes = {
     onUpdateClick: PropTypes.func.isRequired,
   };
+
+  const userId = JSON.parse(localStorage.getItem("user"))?.id;
+  const {data: user} = useUser(userId);
   return (
     <div className=" shadow-[2px_2px_2px_2px_rgba(0,0,0,0.4)] rounded-[30px]">
       <Paper
@@ -121,17 +119,17 @@ const PersonalInfo = ({ onUpdateClick }) => {
         <Group align="center" className="mb-4">
           {/* Use Mantine Avatar */}
           <Avatar
-            src={mockUser.avatar}
+            src={user?.avatar}
             size={96} // Corresponds to w-24 h-24
             alt="ảnh đại diện"
             className="border-4 border-black"
           />
-          <Title order={2}>{mockUser.name}</Title>
+          <Title order={2}>{user?.fullName}</Title>
         </Group>
         <Stack pl={60} spacing="xs">
           {" "}
           {/* Adjust padding to align text */}
-          <Text size="xl">Email/Tài khoản: {mockUser.email}</Text>
+          <Text size="xl">Email/Tài khoản: {user?.email}</Text>
           <Text size="xl">Mật khẩu: ********</Text>
           {/* Use Mantine Button */}
           <Button
@@ -210,11 +208,10 @@ Vào phần quản lý thông tin tài khoản -> xoá tài khoản.`}
 };
 
 const PaymentMethods = () => {
-  const qrCodeUrl =
-    "https://cellphones.com.vn/sforum/wp-content/uploads/2024/02/anh-phong-canh-66-1.jpg"; // Placeholder QR
-  const momoLogo = "/assets/images/momo.png"; // Placeholder path
-  const paypalLogo = "/assets/images/paypal.png"; // Placeholder path
-  const zaloPayLogo = "/assets/images/zalopay.png"; // Placeholder path
+  const qrCodeUrl = "/images/qr_code.jpg"; // Placeholder QR
+  const momoLogo = "/images/momo.jpg"; // Placeholder path
+  const paypalLogo = "/images/paypal.jpg"; // Placeholder path
+  const zaloPayLogo = "/images/zalopay.jpg"; // Placeholder path
 
   return (
     <div className=" shadow-[2px_2px_2px_2px_rgba(0,0,0,0.4)] rounded-[30px]">
@@ -228,11 +225,21 @@ const PaymentMethods = () => {
           Liên kết tài khoản ngân hàng
         </Title>
         <Stack className="font-bold text-xl space-y-0 pt-2 pb-4">
-          <Text fw={700} mb={-12}>Số tài khoản: 123456787654</Text>
-          <Text fw={700} mb={-12}>Tên chủ tài khoản: Nguyễn Quang Minh</Text>
-          <Text fw={700} mb={-12}>Ngân hàng: ngân hàng tiên phong</Text>
-          <Text fw={700} mb={-12}>Chi nhánh: Hà nội</Text>
-          <Text fw={700} mb={-12}>QR Code:</Text>
+          <Text fw={700} mb={-12}>
+            Số tài khoản: 123456787654
+          </Text>
+          <Text fw={700} mb={-12}>
+            Tên chủ tài khoản: Nguyễn Quang Minh
+          </Text>
+          <Text fw={700} mb={-12}>
+            Ngân hàng: ngân hàng tiên phong
+          </Text>
+          <Text fw={700} mb={-12}>
+            Chi nhánh: Hà nội
+          </Text>
+          <Text fw={700} mb={-12}>
+            QR Code:
+          </Text>
         </Stack>
         <Group position="center">
           <Image
@@ -250,68 +257,87 @@ const PaymentMethods = () => {
         </Title>
         <Group position="center" spacing="lg" className="mb-4 pb-4 w-full">
           <div className="flex justify-center gap-6 mx-auto">
-
-          <Button
-            variant="unstyled"
-            p={0}
-            w={80}
-            h={80}
-            radius={"lg"}
-            className="focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-xl"
-            >
-            <Image
-              src={"https://brandlogos.net/wp-content/uploads/2023/09/momo-logo_brandlogos.net_mtkvq.png"}
-              alt="MOMO"
+            <Button
+              variant="unstyled"
+              p={0}
               w={80}
               h={80}
-              radius="md"
-              fit="fill"
-              />
-          </Button>
-          <Button
-            variant="unstyled"
-            p={0}
-            w={80}
-            h={80}
-            radius={"lg"}
-            className="focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-xl"
+              radius={"md"}
+              className="focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-sm"
             >
-            <Image
-              src={"https://brandlogos.net/wp-content/uploads/2023/09/momo-logo_brandlogos.net_mtkvq.png"}
-              alt="PAYPAL"
+              <Image
+                src={momoLogo}
+                alt="MOMO"
+                w={80}
+                h={80}
+                radius="md"
+                fit="fill"
+              />
+            </Button>
+            <Button
+              variant="unstyled"
+              p={0}
               w={80}
               h={80}
-              radius="md"
-              />
-          </Button>
-          <Button
-            variant="unstyled"
-            p={0}
-            w={80}
-            h={80}
-            radius={"lg"}
-            className="focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-xl"
+              radius={"md"}
+              className="focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-sm"
             >
-            <Image
-              src={"https://brandlogos.net/wp-content/uploads/2023/09/momo-logo_brandlogos.net_mtkvq.png"}
-              alt="ZALOPAY"
+              <Image src={paypalLogo} alt="PAYPAL" w={80} h={80} radius="md" />
+            </Button>
+            <Button
+              variant="unstyled"
+              p={0}
               w={80}
               h={80}
-              radius="md"
+              radius={"md"}
+              className="focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-sm"
+            >
+              <Image
+                src={zaloPayLogo}
+                alt="ZALOPAY"
+                w={80}
+                h={80}
+                radius="md"
               />
-          </Button>
-              </div>
+            </Button>
+          </div>
         </Group>
       </Paper>
     </div>
   );
 };
 
-const UpdateInfoForm = ({onUpdateClick}) => {
-  UpdateInfoForm.propTypes = {setActiveSection: PropTypes.func.isRequired,};
+const UpdateInfoForm = ({ onUpdateClick }) => {
+  UpdateInfoForm.propTypes = { setActiveSection: PropTypes.func.isRequired };
+  const userId = JSON.parse(localStorage.getItem("user"))?.id;
+  const { data: userInfor } = useUser(userId);
+  useEffect(() => {
+    if (userInfor) {
+      setFormData((prev) => ({
+        ...prev,
+        avatar: userInfor.avatar || "",
+        backgroundImage: userInfor.backgroundImage || "",
+        fullName: userInfor.fullName || "",
+        email: userInfor.email || "",
+        dob: userInfor.dob ? userInfor.dob.split("T")[0] : "",
+        gender: userInfor.gender || "",
+        facebook: userInfor.facebook || "",
+        tiktok: userInfor.tiktok || "",
+        blog: userInfor.blog || "",
+      }));
+      setAvatarPreview(userInfor.avatar || "/images/avatar_mac_dinh.png");
+      setCoverImagePreview(
+        userInfor.backgroundImage || "/images/anh_bia_mac_dinh.png"
+      );
+    }
+  }, [userInfor]);
+
   const [formData, setFormData] = useState({
+    avatar: "",
+    backgroundImage: "",
+    fullName: "",
     email: "",
-    yearOfBirth: "",
+    dob: "",
     gender: "",
     facebook: "",
     tiktok: "",
@@ -320,22 +346,38 @@ const UpdateInfoForm = ({onUpdateClick}) => {
     newPassword: "",
     renewPassword: "",
   });
+  const [coverImagePreview, setCoverImagePreview] = useState(
+    "/images/anh_bia_mac_dinh.png" // Default image
+  );
+
+  const [avatarPreview, setAvatarPreview] = useState(
+    "/images/avatar_mac_dinh.png" // Default image
+  );
 
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    console.log("Form data submitted:", formData);
-    // Add actual submission logic here (e.g., API call)
+  const handleBackgroundImageChange = (file) => {
+    if (file) {
+      setFormData((prev) => ({ ...prev, backgroundImage: file }));
+      setCoverImagePreview(URL.createObjectURL(file));
+    }
   };
 
-  // You would also need state and logic for handling avatar upload
-  const handleAvatarChangeClick = () => {
-    console.log("Change avatar clicked");
-    // Trigger file input click here
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    console.log("Form data:", formData);
+    const user = UserService.updatepInfor(userId, formData);
+    onUpdateClick();
+  };
+
+  const handleAvatarChangeClick = (file) => {
+    if (file) {
+      setFormData((prev) => ({ ...prev, avatar: file }));
+      setAvatarPreview(URL.createObjectURL(file));
+    }
   };
 
   return (
@@ -351,23 +393,66 @@ const UpdateInfoForm = ({onUpdateClick}) => {
           <Group align="center" className="mb-4">
             <div className="relative mr-6">
               <Avatar
-                src={mockUser.avatar}
+                src={avatarPreview}
                 size={96}
                 alt="ảnh đại diện"
                 className="border-4 border-black"
               />
-              <button
-                onClick={handleAvatarChangeClick}
-                color="gray"
-                className="absolute bottom-0 right-0 rounded-full w-10 h-10 flex items-center justify-center" // Positioning and styling
-                aria-label="Change Avatar"
+              <FileButton
+                onChange={handleAvatarChangeClick}
+                value={formData.avatar}
+                accept="image/png,image/jpeg,image/webp"
               >
-                <IconCamera className="bg-white rounded" size={24} />
-              </button>
+                {(props) => (
+                  <button
+                    type="button"
+                    {...props}
+                    color="gray"
+                    className="absolute bottom-0 right-0 rounded-full w-10 h-10 flex items-center justify-center" // Positioning and styling
+                    aria-label="Change Avatar"
+                  >
+                    <IconCamera className="bg-white rounded" size={24} />
+                  </button>
+                )}
+              </FileButton>
             </div>
-            <Title order={2}>{mockUser.name}</Title>
+            <TextInput
+              value={formData.fullName}
+              onChange={handleChange}
+              label="Họ và tên:"
+              name="fullName"
+              size="lg"
+              styles={{
+                input: { borderColor: "#4B5563", borderWidth: "2px" },
+              }}
+            />
           </Group>
           <div className="w-full pl-12 pr-6">
+            <div>
+              <Image
+                src={coverImagePreview}
+                alt="anh_bia preview"
+                height="auto"
+                radius="md"
+                className="w-full h-auto rounded-xl max-w-[200px] sm:max-w-[250px] object-cover aspect-[3/4]"
+              />
+              <FileButton
+                onChange={handleBackgroundImageChange}
+                value={formData.backgroundImage}
+                accept="image/png,image/jpeg,image/webp"
+              >
+                {(props) => (
+                  <Button
+                    {...props}
+                    color="blue"
+                    size="lg"
+                    className="text-white font-bold text-xl"
+                  >
+                    Chọn ảnh
+                  </Button>
+                )}
+              </FileButton>
+            </div>
             <Stack spacing="md">
               <TextInput
                 label="Đổi email/tài khoản:"
@@ -380,8 +465,9 @@ const UpdateInfoForm = ({onUpdateClick}) => {
               />
               <TextInput
                 label="Năm sinh:"
-                name="yearOfBirth"
-                value={formData.yearOfBirth}
+                name="dob"
+                value={formData.dob}
+                type="date"
                 onChange={handleChange}
                 styles={{
                   input: { borderColor: "#4B5563", borderWidth: "2px" },
@@ -423,7 +509,7 @@ const UpdateInfoForm = ({onUpdateClick}) => {
                   input: { borderColor: "#4B5563", borderWidth: "2px" },
                 }}
               />
-              <PasswordInput
+              {/* <PasswordInput
                 label="Mật khẩu hiện tại:"
                 name="nowPassword"
                 onChange={handleChange}
@@ -448,13 +534,13 @@ const UpdateInfoForm = ({onUpdateClick}) => {
                 styles={{
                   input: { borderColor: "#4B5563", borderWidth: "2px" },
                 }}
-              />
+              /> */}
             </Stack>
           </div>
         </div>
         {/* Submit Button */}
-        <Group position="center" className="my-12 pb-8">
-        <Button
+        <Group position="center" className="my-12 pb-8" justify="center">
+          <Button
             onClick={onUpdateClick}
             size="lg"
             color="blue"
@@ -485,8 +571,6 @@ const SettingPage = () => {
   const tab = searchParams.get("tab");
   // State to track the active section
   const [activeSection, setActiveSection] = useState(tab || "notifications"); // Default section
-  console.log("Active section:", activeSection);
-  console.log("Tab:", tab);
 
   const menuItems = [
     {
@@ -516,7 +600,11 @@ const SettingPage = () => {
 
   const renderActiveComponent = () => {
     if (activeSection === "updateInfo") {
-      return <UpdateInfoForm onUpdateClick={() => setActiveSection("personalInfo")} />;
+      return (
+        <UpdateInfoForm
+          onUpdateClick={() => setActiveSection("personalInfo")}
+        />
+      );
     }
     const activeItem = menuItems.find((item) => item.id === activeSection);
     return activeItem ? activeItem.component : null; // Render the component based on state
@@ -533,8 +621,18 @@ const SettingPage = () => {
             {menuItems.map((item) => (
               <Button
                 key={item.id}
-                variant={activeSection === item.id || (item.id === "personalInfo" && activeSection === "updateInfo") ? "default" : "subtle"}
-                color={activeSection === item.id || (item.id === "personalInfo" && activeSection === "updateInfo") ? "white" : "black"}
+                variant={
+                  activeSection === item.id ||
+                  (item.id === "personalInfo" && activeSection === "updateInfo")
+                    ? "default"
+                    : "subtle"
+                }
+                color={
+                  activeSection === item.id ||
+                  (item.id === "personalInfo" && activeSection === "updateInfo")
+                    ? "white"
+                    : "black"
+                }
                 onClick={() => setActiveSection(item.id)}
                 justify="flex-start"
                 className={`px-2 py-2 flex rounded-xl text-2xl w-full text-black font-extrabold h-auto 

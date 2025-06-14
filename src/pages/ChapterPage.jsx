@@ -1,19 +1,14 @@
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Container,
   Box,
-  Stack,
   Group,
   Text,
-  Anchor,
-  Button,
   Menu,
-  Image,
   Center,
   UnstyledButton,
   Breadcrumbs,
   Notification, // For error display
-  useMantineTheme, // To potentially access theme values
 } from "@mantine/core";
 import {
   IconStar,
@@ -24,11 +19,14 @@ import {
   IconSettings,
   IconX,
 } from "@tabler/icons-react"; // Using Tabler Icons bundled with Mantine
+import { useChapter, useChaptersByStoryId, useNextChapter, usePreviousChapter } from "../hooks/useChapter";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import { getIdTitleFromUrl, slugify } from "../utils";
+import { useStory } from "../hooks/useStory";
 
 // Helper function to format content (JS equivalent of the PHP logic)
 const formatContent = (content) => {
   if (!content) return "";
-  // Remove the specific ad script pattern using regex
   const contentWithoutAds = content.replace(
     /\(adsbygoogle\s*=\s*window\.adsbygoogle\s*\|\|\s*\[\]\)\.push\(\{\}\);/g,
     ""
@@ -40,92 +38,55 @@ const formatContent = (content) => {
   return contentWithoutAds.split("\n").join("<br />"); // Preserve existing newlines as <br>
 };
 
-// Mock data structure - replace with your actual props/state
-const mockData = {
-  title: "Truyện ABC",
-  chapter: "Chương 10 - Mở Đầu Mới",
-  content: `Nội dung của chương truyện... Lorem ipsum dolor sit amet, consectetur adipiscing elit. (adsbygoogle = window.adsbygoogle || []).push({}); Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. \n\n Đoạn văn thứ hai sau một khoảng trống. \n\n(adsbygoogle = window.adsbygoogle || []).push({}); Another paragraph here.`,
-  form_doc: null, // Example: null, 0, or some other value indicating free/paid status
-  users_id: 5, // Example author ID
-};
 
-const mockPreviousChapter = { chapter: "Chương 9 - Kết Thúc Cũ" };
-const mockNextChapter = { chapter: "Chương 11 - Hành Trình Tiếp Theo" };
-const mockChapters = [
-  {
-    id: 1,
-    chapter:
-      "Chương 1: this is title of this chapter this is title of this chapter",
-  },
-  { id: 2, chapter: "Chương 2" },
-  { id: 3, chapter: "Chương 3" },
-  { id: 4, chapter: "Chương 4" },
-  { id: 5, chapter: "Chương 5" },
-  { id: 6, chapter: "Chương 6" },
-  { id: 7, chapter: "Chương 7" },
-  { id: 8, chapter: "Chương 8" },
-  { id: 9, chapter: "Chương 9 - Kết Thúc Cũ" },
-  { id: 10, chapter: "Chương 10 - Mở Đầu Mới" },
-  { id: 11, chapter: "Chương 11 - Hành Trình Tiếp Theo" },
-  { id: 12, chapter: "Chương 12 - Kết Thúc Cũ" },
-  { id: 13, chapter: "Chương 13 - Mở Đầu Mới" },
-  { id: 14, chapter: "Chương 14 - Hành Trình Tiếp Theo" },
-  { id: 15, chapter: "Chương 15 - Kết Thúc Cũ" },
-  { id: 16, chapter: "Chương 16 - Mở Đầu Mới" },
-  { id: 17, chapter: "Chương 17 - Hành Trình Tiếp Theo" },
-  { id: 18, chapter: "Chương 18 - Kết Thúc Cũ" },
-  { id: 19, chapter: "Chương 19 - Mở Đầu Mới" },
-  { id: 20, chapter: "Chương 20 - Hành Trình Tiếp Theo" },
-  { id: 21, chapter: "Chương 21 - Kết Thúc Cũ" },
-  { id: 22, chapter: "Chương 22 - Mở Đầu Mới" },
-];
 
 // --- React Component ---
 
-const ChapterPage = ({
-  data = mockData, // Default to mock data for example
-  previousChapter = mockPreviousChapter,
-  nextChapter = mockNextChapter,
-  chapters = mockChapters,
-  isAuthenticated = true, // Example: user is logged in
-  currentUser = { id: 10 }, // Example: logged in user ID
-  isPurchased = false, // Example: user hasn't purchased this specific chapter yet
-  purchaseSuccess = false, // Example: user just completed a purchase flow
-  error = null, // Example: 'Không đủ tiền để mua chương này.'
-  // Add props for actual bookmark status and update handler if needed from parent
-}) => {
-  const theme = useMantineTheme();
-  const [isBookmarked, setIsBookmarked] = useState(false); // Local state for bookmark toggle
-  const [showError, setShowError] = useState(!!error); // Control error visibility
+const ChapterPage = () => {
+  const { title, chapter: chapterTitle } = useParams();
+  const navigate = useNavigate();
 
-  // Simulate receiving error prop
-  useEffect(() => {
-    setShowError(!!error);
-  }, [error]);
+  const {id: storyId, slug: titleSlug} = getIdTitleFromUrl(title); // id của story
+  const { data: story } = useStory(storyId, titleSlug);
+  if (!story) {
+    navigate("/");
+  }
+
+  const {id: chapterId, slug: chapterSlug}  = getIdTitleFromUrl(chapterTitle);
+  const {data: chapter, error} = useChapter(chapterId, chapterSlug );
+  if (!chapter) {
+    navigate("/");
+  }
+  const {data: chapters} = useChaptersByStoryId(chapter?.storyId);
+
+  const [isBookmarked, setIsBookmarked] = useState(false); // Local state for bookmark toggle
+  const [showError, setShowError] = useState(false); // Control error visibility
+  const {data: previousChapter} = usePreviousChapter(chapter?.id, chapter?.storyId, chapter?.chapterNumber);
+  const {data: nextChapter} = useNextChapter(chapter?.id, chapter?.storyId, chapter?.chapterNumber);
+
+
 
   const handleBookmarkToggle = () => {
     setIsBookmarked((prev) => !prev);
-    // Add API call here to save/remove bookmark status on the server
-    console.log("Bookmark toggled:", !isBookmarked);
   };
 
-  const formattedContent = formatContent(data?.content);
+  const formattedContent = formatContent(chapter?.content);
 
   // Determine if the content should be displayed based on the logic
-  let canViewContent = false;
-  if (data?.form_doc == null || data?.form_doc === 0) {
-    canViewContent = true; // Free chapter
-  } else if (purchaseSuccess) {
-    canViewContent = true; // Just purchased successfully
-  } else if (isAuthenticated) {
-    if (currentUser?.id === data?.users_id) {
-      canViewContent = true; // User is the author
-    } else if (isPurchased) {
-      // Need more specific check if `isPurchased` relates *exactly* to this title/chapter
-      // Assuming `isPurchased` prop means this specific chapter is bought
-      canViewContent = true; // User has purchased this chapter previously
-    }
-  }
+  let canViewContent = true;
+  // if (data?.form_doc == null || data?.form_doc === 0) {
+  //   canViewContent = true; // Free chapter
+  // } else if (purchaseSuccess) {
+  //   canViewContent = true; // Just purchased successfully
+  // } else if (isAuthenticated) {
+  //   if (currentUser?.id === data?.users_id) {
+  //     canViewContent = true; // User is the author
+  //   } else if (isPurchased) {
+  //     // Need more specific check if `isPurchased` relates *exactly* to this title/chapter
+  //     // Assuming `isPurchased` prop means this specific chapter is bought
+  //     canViewContent = true; // User has purchased this chapter previously
+  //   }
+  // }
   // Note: The original logic for $boolpurchased comparison was complex.
   // Here, we simplify assuming `isPurchased` is a boolean prop indicating
   // if *this specific chapter* has been purchased by the logged-in user.
@@ -133,16 +94,16 @@ const ChapterPage = ({
 
   const breadcrumbItems = [
     { title: "Trang chủ", href: "/" },
-    { title: data?.title, href: `#` }, // Replace # with actual link to story page if needed
-    { title: data?.chapter, href: "#" }, // Current page, no link needed usually
+    { title: story?.title, href: `/story/${slugify(story?.title || "")}-${story?.id}` }, // Replace # with actual link to story page if needed
+    { title: `Chương ${chapter?.chapterNumber}: ${chapter?.title}`, href: "#" }, // Current page, no link needed usually
   ].map((item, index, arr) => (
-    <Anchor
-      href={item.href}
+    <Link
+      to={item.href}
       key={index}
       className={`text-red-400 ${index === arr.length - 1 ? "font-bold" : ""}`}
     >
       {item.title}
-    </Anchor>
+    </Link>
   ));
 
   return (
@@ -186,12 +147,10 @@ const ChapterPage = ({
               </Text>
             </UnstyledButton>
             {/* Previous Chapter Button */}
-            <Anchor
-              href={
+            <Link
+              to={
                 previousChapter
-                  ? `/${encodeURIComponent(data.title)}/${encodeURIComponent(
-                      previousChapter.chapter
-                    )}`
+                  ? `/story/${slugify(story?.title || "")}-${story?.id}/${slugify(previousChapter?.title)}-${previousChapter?.id}`
                   : "#"
               }
               className={`text-center ${
@@ -204,7 +163,7 @@ const ChapterPage = ({
               <Text size="xl" fw={700} c="gray.7">
                 Trước
               </Text>
-            </Anchor>
+            </Link>
             <Menu shadow="md" width={250}>
               <Menu.Target>
                 <UnstyledButton className="text-center">
@@ -218,31 +177,27 @@ const ChapterPage = ({
               </Menu.Target>
 
               <Menu.Dropdown mah={"40rem"} h={"40%"} className="!overflow-y-scroll !w-[70%] md:!w-[50%] lg:!w-[40%]">
-                {chapters.map((chap) => (
+                {chapters?.map((chap) => (
                   <Menu.Item
                     key={chap?.id}
-                    component="a"
-                    href={`/${encodeURIComponent(
-                      data?.title
-                    )}/${encodeURIComponent(chap?.chapter)}`}
                     className="text-xl font-bold !p-0 overflow-hidden my-1"
                   >
+                    <Link to={`/story/${slugify(story?.title || "")}-${story?.id}/${slugify(chap?.title)}-${chap?.id}`}>
                     <Box className="block px-2 py-1 w-full border rounded border-gray-200 hover:bg-gray-200">
                       <Text truncate="end" size="lg" className="font-bold">
-                        {chap?.chapter}
+                        {`Chương ${chap?.chapterNumber}: ${chap?.title}`}
                       </Text>
                     </Box>
+                    </Link>
                   </Menu.Item>
                 ))}
               </Menu.Dropdown>
             </Menu>
 
-            <Anchor
-              href={
+            <Link
+              to={
                 nextChapter
-                  ? `/${encodeURIComponent(data?.title)}/${encodeURIComponent(
-                      nextChapter.chapter
-                    )}`
+                  ? `/story/${slugify(story?.title || "")}-${story?.id}/${slugify(nextChapter?.title)}-${nextChapter?.id}`
                   : "#"
               }
               className={`text-center ${
@@ -256,10 +211,10 @@ const ChapterPage = ({
               <Text size="xl" fw={700} c="gray.7">
                 Sau
               </Text>
-            </Anchor>
+            </Link>
             {/* Cấu hình Button */}
             <UnstyledButton
-              onClick={() => alert("Settings clicked!")}
+              // onClick={() => alert("Settings clicked!")}
               className="text-center"
             >
               <Center>
@@ -292,6 +247,7 @@ const ChapterPage = ({
               component="div"
               fw={700}
               lh="1.3"
+              mih={"20vh"}
               className="text-wrap font-medium !text-xs md:!text-sm lg:!text-lg text-gray-800"
               dangerouslySetInnerHTML={{ __html: formattedContent }}
             />
@@ -301,22 +257,6 @@ const ChapterPage = ({
               <Text size="xl" c="dimmed" fw={500}>
                 Nội dung này bị khóa.
               </Text>
-              {/* Add a purchase button/link here if applicable */}
-              {!isAuthenticated && (
-                <Text mt="sm">
-                  Vui lòng <Anchor c={"blue"} href="/login">đăng nhập</Anchor> để xem.
-                </Text>
-              )}
-              {isAuthenticated && !isPurchased && data?.form_doc > 0 && (
-                <Button
-                  mt="lg"
-                  variant="filled"
-                  color="blue"
-                  onClick={() => alert("Implement Purchase Flow!")}
-                >
-                  Mua chương này
-                </Button>
-              )}
             </Box>
           )}
         </Box>

@@ -75,7 +75,6 @@ const NotificationPage = () => {
 
     const handleLoadMore = () => {
         // Placeholder for loading more read notifications
-        console.log("Load more notifications...");
         // Example: Append more sample data
         setReadNotifications(prev => [...prev, { ...sampleNotification, id: Math.random() }, { ...sampleNotification, id: Math.random() }]);
     };

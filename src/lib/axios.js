@@ -7,7 +7,7 @@ export const instance = axios.create({
 });
 
 export const authInstance = axios.create({
-    baseURL: authURL,
+    baseURL: baseURL,
     Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
 });
 

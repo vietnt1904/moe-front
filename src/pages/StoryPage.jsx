@@ -14,7 +14,6 @@ import {
   Select,
   Paper,
   SimpleGrid,
-  Anchor,
   ActionIcon,
   Center,
   Rating,
@@ -25,114 +24,40 @@ import { Clock4 } from "lucide-react";
 import { Download } from "lucide-react";
 import { MessageSquareMore } from "lucide-react";
 import { Eye } from "lucide-react";
+import StoryCard from "../components/StoryCard";
+import { Link, useParams, useNavigate, Navigate } from "react-router-dom";
+import { getIdTitleFromUrl, slugify, updateTime } from "../utils";
+import { useStoriesSameAuthor, useStory } from "../hooks/useStory";
+import { useChaptersByStoryId } from "../hooks/useChapter";
 // Import icons if using an icon library
 // import { IconClock, IconFlame, IconChevronDown, IconChevronUp, IconDots, IconEye, IconMessageCircle, IconDownload } from '@tabler/icons-react';
 
-// --- Placeholder Data (Replace with actual props/fetched data) ---
-const placeholderStoryData = {
-  title: "Jujutsu Kaisen",
-  author: "Gege Akutami",
-  bannerUrl:
-    "https://m.yodycdn.com/blog/hinh-nen-thien-nhien-4k-yody-vn-115.jpg",
-  coverUrl: "/images/anh_bia.png",
-  updatedTime: "1 tiếng trước",
-  tags: ["Manga", "Đang tiến hành", "Shounen", "Hành động", "Siêu nhiên"],
-  isHot: true,
-  stats: {
-    chapters: 20,
-    views: 99999,
-    ratings: 500,
-    followers: 7000,
-  },
-  description:
-    "Thể loại: Ngôn tình, Cổ đại, HE, Tình cảm, Xuyên việt, Ngọt sủng, Xuyên thư, Làm ruộng, Trạch đấu, Nhẹ nhàng, Vả mặtVăn ánTô Hoàn bất ngờ xuyên vào một cuốn tiểu thuyết ngôn tình cổ đại sủng văn, trở thành thiên kim giả bị thiếp thất của địa chủ hoán đổi, cũng là nữ phụ độc ác nhất trong truyện. Trong nguyên tác, thiên kim giả bất mãn vì thân phận bị đổi lại, không muốn sống khổ ở nơi làng quê nên đã đối đầu với thiên kim thật khắp nơi, cuối cùng thành công bị tất cả mọi người chán ghét, khiến bản thân rơi vào đường cùng.Thiên kim thật có ánh hào quang của nữ chính, là một người rất tốt bụng và mạnh mẽ...",
-  svgXmlns: "http://www.w3.org/2000/svg", // Example for SVG xmlns if needed dynamically
-};
-
-const placeholderChaptersData = Array.from({ length: 25 }, (_, i) => ({
-  id: `ch-${i + 1}`,
-  title: `Chapter ${i + 1}: Tên Chapter ${i + 1}`,
-  url: `/jujutsu-kaisen/chapter-${i + 1}`,
-  number: i + 1,
-}));
-
-const placeholderCommentsData = Array.from({ length: 5 }, (_, i) => ({
-  id: `cmt-${i + 1}`,
-  author: "Ẩn danh",
-  avatar: "/assets/images/avatar_an_danh.png",
-  timestamp: `${i + 1} tháng trước`,
-  content: `Truyện rất hay, nét vẽ đẹp, tình tiết mạch lạc, nhất quán, nội dung cuốn hút ${
-    i + 1
-  }. Thể loại: Ngôn tình, Cổ đại, HE, Tình cảm, Xuyên việt, Ngọt sủng, Xuyên thư, Làm ruộng, Trạch đấu, Nhẹ nhàng, Vả mặtVăn ánTô Hoàn bất ngờ xuyên vào một cuốn tiểu thuyết ngôn tình cổ đại sủng văn... (rest of long text)`,
-  likes: 200 + i * 10,
-  replies: 60 + i * 5,
-}));
-
-const placeholderRelatedStoriesData = Array(4)
-  .fill(null)
-  .map((_, i) => ({
-    id: `related-${i + 1}`,
-    title: `Related Story ${i + 1}`,
-    imageUrl: "/assets/images/anh_truyen_dai_dien.png",
-    href: `/related-story-${i + 1}`,
-    isComplete: i % 2 === 0,
-    isHot: i % 3 === 0,
-    isNew: i === 0,
-  }));
-
-// --- Reusable Story Card Component --- (Adapt from previous examples if needed)
-const StoryCard = ({ story }) => (
-  <Paper radius="xl" shadow="sm" className="relative">
-    <Anchor href={story.href}>
-      <Image
-        loading="lazy"
-        src={story.imageUrl}
-        alt={story.title || "Ảnh truyện"}
-        radius="xl"
-        className="w-full h-auto aspect-[2/3] object-cover"
-      />
-      <Stack gap={4} className="absolute top-1 left-1">
-        {story.isComplete && (
-          <Badge color="green" variant="filled" size="xs">
-            Hoàn thành
-          </Badge>
-        )}
-        {story.isHot && (
-          <Badge color="red" variant="filled" size="xs">
-            Hot
-          </Badge>
-        )}
-        {story.isNew && (
-          <Badge color="blue" variant="filled" size="xs">
-            New
-          </Badge>
-        )}
-      </Stack>
-    </Anchor>
-    {/* Optionally add title below image */}
-    {/* <Text size="sm" mt="xs" ta="center" fw={500} lineClamp={1}>{story.title}</Text> */}
-  </Paper>
-);
-
 // --- Main Component ---
-const StoryPage = ({
-  storyData = placeholderStoryData,
-  chaptersData = placeholderChaptersData,
-  commentsData = placeholderCommentsData,
-  relatedStoriesData = placeholderRelatedStoriesData,
-}) => {
+const StoryPage = () => {
+  const { title: url } = useParams();
+  const navigate = useNavigate();
+  const { id, slug } = getIdTitleFromUrl(url); // id của story
+  const { data: story, error: storyError } = useStory(id, slug);
+  const { data: chapters } = useChaptersByStoryId(id);
+  const { data: sameAuthorStories } = useStoriesSameAuthor(story?.Author?.id);
+
+  const defaultBannerImage =
+    "https://m.yodycdn.com/blog/hinh-nen-thien-nhien-4k-yody-vn-115.jpg";
+
   const [activeTab, setActiveTab] = useState("rating"); // 'rating' or 'discussion'
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [showAllChapters, setShowAllChapters] = useState(false);
-  const [rating, setRating] = useState(0); // Use Mantine Rating state
+  const [rating, setRating] = useState(5); // Use Mantine Rating state
   const [expandedComments, setExpandedComments] = useState({}); // { commentId: true/false }
+  const [commentsData, setCommentsData] = useState([]);
 
   const chapterListRef = useRef(null); // For scrolling
 
   const initialVisibleChapters = 10;
-  const visibleChaptersData = showAllChapters
-    ? chaptersData
-    : chaptersData.slice(0, initialVisibleChapters);
+
+  if (!id || !slug || storyError) {
+    return <Navigate to="/" replace />;
+  }
 
   const toggleDescription = () => {
     setIsDescriptionExpanded(!isDescriptionExpanded);
@@ -172,28 +97,31 @@ const StoryPage = ({
 
   const handleSubmitRating = (event) => {
     event.preventDefault();
-    console.log(
-      "Submitting rating:",
-      rating,
-      event.target.elements.ratingText.value
-    );
     // Add actual API call logic here
   };
 
   const handleSubmitComment = (event) => {
     event.preventDefault();
-    console.log("Submitting comment:", event.target.elements.commentText.value);
     // Add actual API call logic here
     event.target.reset(); // Clear textarea
   };
 
+  const handleScrollToChapterList = () => {
+    if (chapterListRef.current) {
+      chapterListRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
+
   return (
     <>
-      <Container size="lg" className="relative w-3/4 mx-auto mt-4" p={0}>
+      <Container size="lg" className="relative w-3/4 mx-auto mt-4 mb-36" p={0}>
         {/* Banner */}
         <Box className="mt-24 w-full overflow-hidden rounded-3xl h-40 md:h-72 lg:h-96 shadow-lg">
           <Image
-            src={storyData.bannerUrl}
+            src={story?.bannerUrl || defaultBannerImage}
             alt="Ảnh nền truyện"
             className="block w-full h-full object-cover object-center opacity-60"
           />
@@ -209,10 +137,10 @@ const StoryPage = ({
             {/* Cover Image */}
             <Box className="w-1/4 flex-shrink-0">
               <Image
-                src={storyData.coverUrl}
+                src={story?.image}
                 alt="Ảnh bìa truyện"
-                radius={{ base: "md", lg: "xl" }} // Responsive radius
-                className="w-full h-auto object-cover object-center shadow-md"
+                radius={"md"}
+                className="w-full h-auto object-cover object-center shadow-[3px_3px_3px_3px_rgba(0,0,0,0.4)]"
                 style={{ aspectRatio: "2 / 3" }} // Maintain aspect ratio
               />
             </Box>
@@ -226,9 +154,7 @@ const StoryPage = ({
                     order={1}
                     className="text-xl md:text-4xl lg:text-5xl font-bold italic text-shadow-sm"
                   >
-                    {" "}
-                    {/* Example text shadow */}
-                    {storyData.title}
+                    {story?.title}
                   </Title>
                   {/* Timestamp */}
                   <Group gap={4} align="center" className="ml-4 mb-1 md:mb-2">
@@ -238,28 +164,29 @@ const StoryPage = ({
                       className="bg-black rounded-full flex w-3 h-3 md:w-4 md:h-4 lg:w-6 lg:h-6"
                     />
                     <Text
-                      size="xs"
+                      fw={600}
+                      size="sm"
                       md="lg"
                       className="not-italic font-bold whitespace-nowrap"
                     >
-                      Cập nhật {storyData.updatedTime}
+                      Cập nhật {updateTime(story?.updatedAt)}
                     </Text>
                   </Group>
                 </Group>
                 <Text
-                  size="md"
+                  fw={700}
+                  size="lg"
                   md="xl"
                   lg="3xl"
                   className="italic font-bold pl-1 md:pl-4"
                 >
-                  {storyData.author}
+                  {story?.Author?.fullName}
                 </Text>
               </Stack>
 
               <Stack gap="md">
-                {/* Tags */}
                 <Group gap="xs" wrap="wrap">
-                  {storyData.tags.map((tag) => (
+                  {story?.Topics?.map((tag) => (
                     <Badge
                       key={tag}
                       variant="filled"
@@ -268,42 +195,80 @@ const StoryPage = ({
                       size="sm"
                       md="md"
                       classNames={{
-                          label: "text-black font-bold",
+                        label: "text-black font-bold",
                       }}
                     >
-                      {tag}
+                      {tag.name}
                     </Badge>
                   ))}
-                  {storyData.isHot && (
-                    <img
-                      src="https://png.pngtree.com/png-vector/20221227/ourmid/pngtree-orange-cartoon-cute-flame-png-image_6510196.png"
-                      alt="Hot"
-                      className="w-3 md:w-4 lg:w-6 h-auto"
-                    />
-                    // Or <IconFlame size={18} color="red" />
-                  )}
+
+                  <img
+                    src="https://png.pngtree.com/png-vector/20221227/ourmid/pngtree-orange-cartoon-cute-flame-png-image_6510196.png"
+                    alt="Hot"
+                    className="w-3 md:w-4 lg:w-6 h-auto"
+                  />
                 </Group>
 
                 {/* Action Buttons */}
                 <Group gap="xs" md="md" wrap="wrap">
-                  <Button color="blue" classNames={{
-                    label: "text-white font-extrabold"
-                  }} radius="sm" size="xs" md="sm">
+                  <Button
+                    color="blue"
+                    classNames={{
+                      label: "text-white font-extrabold",
+                    }}
+                    radius="sm"
+                    size="xs"
+                    md="sm"
+                    onClick={handleScrollToChapterList}
+                  >
                     Chương
                   </Button>
-                  <Button color="white" classNames={{
-                    label: "text-black font-extrabold"
-                  }} variant="default" radius="sm" size="xs" md="sm">
+                  <Button
+                    color="white"
+                    classNames={{
+                      label: "text-black font-extrabold",
+                    }}
+                    variant="default"
+                    radius="sm"
+                    size="xs"
+                    md="sm"
+                    onClick={() =>
+                      navigate(
+                        `${slugify(chapters[chapters.length - 1]?.title)}-${
+                          chapters[chapters.length - 1]?.id
+                        }`
+                      )
+                    }
+                  >
                     Đọc tiếp
                   </Button>
-                  <Button color="white" classNames={{
-                    label: "text-black font-extrabold"
-                  }} variant="default" radius="sm" size="xs" md="sm">
+                  <Button
+                    color="white"
+                    classNames={{
+                      label: "text-black font-extrabold",
+                    }}
+                    variant="default"
+                    radius="sm"
+                    size="xs"
+                    md="sm"
+                    onClick={() =>
+                      navigate(
+                        `${slugify(chapters[0]?.title)}-${chapters[0]?.id}`
+                      )
+                    }
+                  >
                     Đọc từ đầu
                   </Button>
-                  <Button color="white" classNames={{
-                    label: "text-black font-extrabold"
-                  }} variant="default" radius="sm" size="xs" md="sm">
+                  <Button
+                    color="white"
+                    classNames={{
+                      label: "text-black font-extrabold",
+                    }}
+                    variant="default"
+                    radius="sm"
+                    size="xs"
+                    md="sm"
+                  >
                     Theo dõi
                   </Button>
                 </Group>
@@ -319,7 +284,7 @@ const StoryPage = ({
                     gap={0}
                     className="px-2 md:px-6 py-1 border-r-2 border-black"
                   >
-                    <Text fw={700}>{storyData.stats.chapters}</Text>
+                    <Text fw={700}>{chapters?.length}</Text>
                     <Text>Chương</Text>
                   </Stack>
                   <Stack
@@ -327,9 +292,7 @@ const StoryPage = ({
                     gap={0}
                     className="px-2 md:px-6 py-1 border-r-2 border-black"
                   >
-                    <Text fw={700}>
-                      {storyData.stats.views.toLocaleString()}
-                    </Text>
+                    <Text fw={700}>{story?.views?.toLocaleString()}</Text>
                     <Text>Lượt đọc</Text>
                   </Stack>
                   <Stack
@@ -337,13 +300,11 @@ const StoryPage = ({
                     gap={0}
                     className="px-2 md:px-6 py-1 border-r-2 border-black"
                   >
-                    <Text fw={700}>{storyData.stats.ratings}</Text>
+                    <Text fw={700}>{story?.rating}</Text>
                     <Text>Đánh giá</Text>
                   </Stack>
                   <Stack align="center" gap={0} className="px-2 md:px-6 py-1">
-                    <Text fw={700}>
-                      {storyData.stats.followers.toLocaleString()}
-                    </Text>
+                    <Text fw={700}>{story?.followers?.toLocaleString()}</Text>
                     <Text>Lượt theo dõi</Text>
                   </Stack>
                 </Group>
@@ -353,8 +314,7 @@ const StoryPage = ({
         </Box>
       </Container>
       {/* --- Separator --- */}
-      <Divider className="bg-gray-800 my-8 h-1 md:mt-16 lg:mt-24" />{" "}
-      {/* Adjusted margin based on overlap */}
+      <Divider className="bg-gray-800 my-8 h-1 md:mt-16 lg:mt-24" />
       {/* --- Description Section --- */}
       <Container size="md" className="w-11/12 md:w-10/12 mx-auto mt-8">
         <Title
@@ -372,7 +332,7 @@ const StoryPage = ({
               overflow: "hidden",
             }}
           >
-            {storyData.description}
+            {story?.description}
           </Text>
           {/* Show More/Less Button */}
           <Center mt="md">
@@ -386,7 +346,7 @@ const StoryPage = ({
                   <IconChevronDown size={14} />
                 )
               } // Replace with actual icons
-              size="sm"
+              size="lg"
             >
               {isDescriptionExpanded ? "Thu gọn" : "Xem thêm"}
             </Button>
@@ -403,10 +363,23 @@ const StoryPage = ({
       >
         <Box className="w-full md:w-11/12 justify-center mx-auto mt-12 lg:mt-16">
           <Stack gap="xs" id="chapterList" className="mb-8">
-            {visibleChaptersData.map((chapter) => (
-              <Anchor
-                href={chapter.url}
-                key={chapter.id}
+            <Title
+              order={2}
+              className="font-bold text-3xl md:text-5xl mt-4 lg:mt-8 italic text-center mb-8"
+            >
+              Danh sách chương
+            </Title>
+            {
+              chapters?.length === 0 && (
+                <Text size="lg" className="text-center">
+                  Chưa có chương nào. Hãy quay lại sau.
+                </Text>
+              )
+            }
+            {chapters?.map((chapter) => (
+              <Link
+                to={`${slugify(chapter?.title)}-${chapter?.id}`}
+                key={chapter?.id}
                 className="no-underline"
               >
                 <Paper
@@ -416,35 +389,35 @@ const StoryPage = ({
                   className="flex items-center justify-between hover:bg-gray-100 transition-colors duration-200 border-2 border-black"
                 >
                   <div className="flex items-center justify-between w-full">
-                  <Text fw={500} c={"gray.8"} span>
-                    {`Chapter ${chapter.number}`}
-                    {chapter.title ? `: ${chapter.title}` : ""}
-                  </Text>
-                  <Group gap="xs" w={"auto"}>
-                    <Eye
-                      src="/images/mat_xanh.png"
-                      className="w-5 h-5 md:w-6 md:h-6"
-                      alt="Views"
-                    />
-                    <MessageSquareMore
-                      src="/images/tin_nhan.png"
-                      className="w-5 h-5 md:w-6 md:h-6"
-                      alt="Comments"
-                    />
-                    <Download
-                      src="/images/tai_xuong.png"
-                      className="w-5 h-5 md:w-6 md:h-6"
-                      alt="Download"
-                    />
-                  </Group>
+                    <Text fw={500} c={"gray.8"} span>
+                      {`Chương ${chapter?.chapterNumber}`}
+                      {chapter?.title ? `: ${chapter?.title}` : ""}
+                    </Text>
+                    <Group gap="xs" w={"auto"}>
+                      <Eye
+                        src="/images/mat_xanh.png"
+                        className="w-5 h-5 md:w-6 md:h-6"
+                        alt="Views"
+                      />
+                      <MessageSquareMore
+                        src="/images/tin_nhan.png"
+                        className="w-5 h-5 md:w-6 md:h-6"
+                        alt="Comments"
+                      />
+                      <Download
+                        src="/images/tai_xuong.png"
+                        className="w-5 h-5 md:w-6 md:h-6"
+                        alt="Download"
+                      />
+                    </Group>
                   </div>
                 </Paper>
-              </Anchor>
+              </Link>
             ))}
           </Stack>
 
           {/* Show More/Less Chapters Button */}
-          {chaptersData.length > initialVisibleChapters && (
+          {chapters?.length > initialVisibleChapters && (
             <Center className="mt-8">
               <Button
                 color="yellow"
@@ -499,7 +472,6 @@ const StoryPage = ({
                 size="xl"
                 value={rating}
                 onChange={setRating}
-                defaultValue={5}
                 count={5}
                 mb="xl"
               />
@@ -507,9 +479,9 @@ const StoryPage = ({
                 name="ratingText"
                 placeholder="Hãy nêu cảm nghĩ của bạn nhé: ..."
                 radius="lg" // rounded-3xl equivalent
-                size="md"
+                size="lg"
                 minRows={4}
-                className="h-48 w-full p-4 bg-gray-800 text-white placeholder:text-gray-300 mb-8"
+                className="h-36 w-full p-4 bg-gray-800 text-white placeholder:text-gray-300 mb-8"
                 classNames={{
                   root: "rounded-2xl",
                   input: "text-white font-semibold text-xl md:text-2xl",
@@ -543,10 +515,14 @@ const StoryPage = ({
                 <Textarea
                   name="commentText"
                   placeholder="Thảo luận:......"
-                  radius="xl"
+                  radius="lg"
                   size="md"
                   minRows={3}
-                  className="h-32 w-full p-4 bg-gray-800 text-white placeholder:text-gray-300"
+                  className="h-36 w-full p-4 bg-gray-800 text-white placeholder:text-gray-300"
+                  classNames={{
+                    root: "rounded-2xl",
+                    input: "text-white font-semibold text-lg md:text-xl",
+                  }}
                 />
                 <Group justify="flex-end" mt="sm">
                   <Button
@@ -566,7 +542,7 @@ const StoryPage = ({
             <Box className="mt-8">
               <Group justify="space-between" mb="lg">
                 <Text size="xl" fw={700}>
-                  {commentsData.length} thảo luận
+                  {commentsData?.length} thảo luận
                 </Text>
                 <Select
                   placeholder="Sắp xếp theo"
@@ -579,8 +555,8 @@ const StoryPage = ({
               </Group>
 
               <Stack gap="lg">
-                {commentsData.map((comment) => (
-                  <Box key={comment.id}>
+                {commentsData?.map((comment) => (
+                  <Box key={comment?.id}>
                     <Paper
                       p="md"
                       radius="xl" // rounded-3xl
@@ -589,17 +565,17 @@ const StoryPage = ({
                       <Group justify="space-between" align="flex-start" mb="xs">
                         <Group gap="xs" align="flex-end">
                           <Image
-                            src={comment.avatar}
+                            src={comment?.avatar}
                             alt="avatar"
                             w={32}
                             h={32}
                             radius="50%"
                           />
                           <Text size="lg" fw={700}>
-                            {comment.author}
+                            {comment?.author}
                           </Text>
                           <Text size="sm" c="dimmed">
-                            {comment.timestamp}
+                            {comment?.timestamp}
                           </Text>
                         </Group>
                         <ActionIcon
@@ -611,28 +587,26 @@ const StoryPage = ({
                       </Group>
 
                       <Box className="relative mx-4 md:mx-12 pb-6">
-                        {" "}
-                        {/* Padding for button */}
                         <Text
                           size="md" // text-lg equivalent
                           className="text-white transition-all duration-300"
                           style={{
-                            maxHeight: expandedComments[comment.id]
+                            maxHeight: expandedComments[comment?.id]
                               ? "none"
                               : "5rem", // max-h-20 approx
                             overflow: "hidden",
                           }}
                         >
-                          {comment.content}
+                          {comment?.content}
                         </Text>
                         {/* Read More/Less for Comment */}
                         <Button
                           variant="subtle"
                           size="xs"
-                          onClick={() => toggleCommentExpansion(comment.id)}
+                          onClick={() => toggleCommentExpansion(comment?.id)}
                           className="absolute bottom-0 right-0 text-xs text-white bg-gray-900/50 hover:bg-gray-900/80 px-2 py-1 rounded"
                         >
-                          {expandedComments[comment.id]
+                          {expandedComments[comment?.id]
                             ? "Thu gọn"
                             : "Xem thêm"}
                         </Button>
@@ -680,7 +654,7 @@ const StoryPage = ({
           cols={{ base: 2, sm: 3, md: 4 }}
           spacing={{ base: "md", lg: "xl" }}
         >
-          {relatedStoriesData.map((story) => (
+          {sameAuthorStories?.map((story) => (
             <StoryCard key={story.id} story={story} />
           ))}
         </SimpleGrid>

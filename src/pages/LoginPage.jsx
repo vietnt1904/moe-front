@@ -1,44 +1,43 @@
 import { LockIcon } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import AuthService from "../services/AuthService";
+import { useForm } from "react-hook-form";
 
 const backgroundImageUrl = "/images/background.jpg";
 const googleLogoUrl =
   "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png"; // Keep external URL or download
 
 function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState(null); // To store login error messages
   const [successMessage, setSuccessMessage] = useState(null); // To store success messages
   const [loading, setLoading] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const { register, handleSubmit } = useForm();
+
+  const navigate = useNavigate();
 
   // --- Replace this with your actual API call logic ---
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  const onSubmit = async (data) => {
+    const { email, password } = data;
     setLoading(true);
     setError(null);
     setSuccessMessage(null);
 
-    console.log("Form submitted:", { email, password, rememberMe });
+    // await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      if (email === "test@example.com" && password === "password") {
-        console.log("Login successful (placeholder)");
+    await AuthService.login(email, password)
+      .then(() => {
         setSuccessMessage("Login successful! Redirecting...");
-      } else {
-        throw new Error("Invalid email or password.");
-      }
-    } catch (err) {
-      console.error("Login error:", err);
-      setError(err.message || "An error occurred during login.");
-    } finally {
-      setLoading(false);
-    }
+        setLoading(false);
+        navigate("/");
+      })
+      .catch((error) => {
+        console.error("Login error:", error);
+        setLoading(false);
+        setError("Invalid email or password.");
+      });
   };
 
   const togglePassword = () => {
@@ -116,7 +115,7 @@ function LoginPage() {
                   </button>
                 </div>
               )}
-              <form onSubmit={handleSubmit} className="w-full">
+              <form onSubmit={handleSubmit((data) => onSubmit(data))} className="w-full">
                 <div className="mb-6 text-center">
                   <h2 className="text-2xl text-white py-2">
                     Chào mừng
@@ -136,17 +135,12 @@ function LoginPage() {
 
                 {/* Email Input */}
                 <div className="relative mb-4">
-                  {" "}
-                  {/* Added margin */}
                   <input
                     id="email"
-                    type="email" // Use type="email" for basic validation
-                    name="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
+                    type="text"
                     className="w-full h-12 px-4 pr-10 rounded-lg border-2 border-gray-400 bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Email"
+                    {...register("email", { required: true })}
                   />
                   <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-xl">
                     @
@@ -158,12 +152,9 @@ function LoginPage() {
                   <input
                     id="password"
                     type={isPasswordVisible ? "text" : "password"}
-                    name="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
                     className="w-full h-12 pl-4 pr-10 rounded-lg border-2 border-gray-400 bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Password"
+                    {...register("password", { required: true })}
                   />
                   <LockIcon
                     onClick={togglePassword}
@@ -173,8 +164,6 @@ function LoginPage() {
 
                 {/* Remember Me & Recovery */}
                 <div className="flex justify-between items-center mb-6 text-sm">
-                  {" "}
-                  {/* Increased bottom margin */}
                   <label className="flex items-center text-gray-200 cursor-pointer">
                     <input
                       type="checkbox"
@@ -193,13 +182,14 @@ function LoginPage() {
                   </a>
                 </div>
 
-                {/* Login Button */}
                 <button
+                  onClick={handleSubmit}
                   type="submit"
                   disabled={loading}
-                  className={`w-full h-12 rounded-lg border-solid border-gray-700 border-2 my-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold flex items-center justify-center transition duration-150 ease-in-out ${
-                    loading ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
+                  className={`w-full h-12 rounded-lg border-solid border-gray-700 border-2 my-2 bg-blue-500 hover:bg-blue-600 
+                    text-white font-semibold flex items-center justify-center transition duration-150 ease-in-out ${
+                      loading ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
                 >
                   {loading ? (
                     <svg
@@ -228,11 +218,6 @@ function LoginPage() {
                 </button>
                 <button
                   type="button" // Important: prevent form submission
-                  onClick={() => {
-                    console.log(
-                      "Google login clicked"
-                    );
-                  }}
                   className="w-full h-12 rounded-lg border-solid border-gray-400 border-2 my-3 bg-gray-100 hover:bg-gray-200 text-gray-800 flex items-center justify-center transition duration-150 ease-in-out"
                 >
                   <img
@@ -246,12 +231,12 @@ function LoginPage() {
                 <div className="text-center mt-4 text-sm">
                   <p className="text-gray-300 py-1">
                     Don{"'"}t have an account?
-                    <a
-                      href="/author/registeruser"
+                    <Link
+                      to="/signup"
                       className="text-blue-300 hover:text-blue-100 pl-1 hover:underline"
                     >
-                      Sign up 
-                    </a>
+                      Sign up
+                    </Link>
                   </p>
                   <p className="text-gray-300 py-1">
                     Go back to

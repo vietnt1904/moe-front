@@ -23,26 +23,30 @@ import { IconSwitchHorizontal } from "@tabler/icons-react";
 import { IconCheck } from "@tabler/icons-react";
 import { IconEdit } from "@tabler/icons-react";
 import { IconChevronDown } from "@tabler/icons-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useTopic } from "../../hooks/useTopic";
+import RequireLogin from "../RequireLogin";
 
 const Header = () => {
-  const categories = [
-    { id: 1, namecategory: "Ngôn Tình" },
-    { id: 2, namecategory: "Tiên Hiệp" },
-    { id: 3, namecategory: "Đô Thị" },
-    { id: 4, namecategory: "Huyền Huyễn" },
-  ];
+  const navigate = useNavigate();
+  const { data: topics } = useTopic();
 
   const textColor = "black";
 
-  const isAuthenticated = true;
-  const user = {
-    name: "Current User",
-    avatarUrl:
-      "https://cellphones.com.vn/sforum/wp-content/uploads/2024/02/anh-phong-canh-66-1.jpg",
-  };
+  const checkUser = localStorage.getItem("user");
+  let user = null;
+  if (checkUser) {
+    user = JSON.parse(checkUser);
+  }
+  const isAuthenticated = user !== null;
+  // const user = {
+  //   name: "Current User",
+  //   avatarUrl:
+  //     "https://cellphones.com.vn/sforum/wp-content/uploads/2024/02/anh-phong-canh-66-1.jpg",
+  // };
 
   const [opened, { toggle }] = useDisclosure(false);
+  const [opened2, { open, close }] = useDisclosure(false);
 
   const theme = useMantineTheme();
 
@@ -78,18 +82,26 @@ const Header = () => {
     },
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    navigate("/");
+  };
+
   return (
     <div className="bg-[linear-gradient(141.39deg,_#9AFDF7_3.43%,_rgb(212,239,244)_86.18%)] shadow-[0px_4px_4px_rgba(0,0,0,0.5)]">
       <div className="w-9/12 mx-auto py-4 flex justify-between items-center align-bottom">
-        {/* Logo */}
         <a
           href="/"
-          className="text-3xl lg:text-5xl font-black italic text-gray-900 no-underline mr-12"
+          className="text-3xl lg:text-4xl font-black italic flex text-gray-900 no-underline mr-12"
         >
-          Moe novel
+          <img
+            src="/images/home_image.png"
+            alt="logo_image"
+            className="w-12 h-12 mr-2"
+          />
+          Ganymede
         </a>
 
-        {/* Burger Menu (Mobile) */}
         <button
           onClick={toggle}
           className="lg:hidden p-2 rounded-md bg-gradient-to-r from-[#77d7ef] to-[#9AFDF7]"
@@ -119,24 +131,38 @@ const Header = () => {
                   borderRadius: "12px",
                 }}
               >
-                {categories.map((category) => (
+                {topics?.map((topic) => (
                   <Menu.Item
-                    key={category.id}
+                    key={topic?.id}
                     className="font-sans hover:bg-blue-300 rounded"
                   >
-                    <a href="/" className="text-dark no-underline lg:text-lg">
-                      {category.namecategory}
-                    </a>
+                    <Link
+                      to={`/search?topic=${topic?.id}`}
+                      className="text-dark no-underline lg:text-lg"
+                    >
+                      {topic?.name}
+                    </Link>
                   </Menu.Item>
                 ))}
               </Menu.Dropdown>
             </Menu>
-            <Link
-              to={"/writestory"}
-              className="text-lg lg:text-2xl font-extrabold text-gray-900 no-underline italic"
-            >
-              Viết truyện
-            </Link>
+            {isAuthenticated ? (
+              <Link
+                to={"/writestory"}
+                className="text-lg lg:text-2xl font-extrabold text-gray-900 no-underline italic"
+              >
+                Viết truyện
+              </Link>
+            ) : (
+              <Link
+                className="text-lg lg:text-2xl font-extrabold text-gray-900 no-underline italic"
+                onClick={open}
+              >
+                Viết truyện
+              </Link>
+            )}
+            <RequireLogin open={opened2} close={close} />
+
             {isAuthenticated ? (
               <Link
                 to="/setting?tab=payment"
@@ -145,12 +171,12 @@ const Header = () => {
                 Nạp xu
               </Link>
             ) : (
-              <a
-                href="/news"
+              <Link
+                to="/news"
                 className="text-lg lg:text-2xl font-extrabold text-gray-900 no-underline italic"
               >
                 Tin tức
-              </a>
+              </Link>
             )}
           </div>
 
@@ -158,7 +184,7 @@ const Header = () => {
           <div className="flex items-center space-x-4">
             <ActionIcon
               component="a"
-              href="/premium" // Replace with premium link
+              href="/setting?tab=payment" // Replace with premium link
               variant="transparent"
               size="xl" // Corresponds to h-12 w-12 approx
             >
@@ -195,7 +221,7 @@ const Header = () => {
                 <form action="/search" method="GET" className="flex">
                   <TextInput
                     placeholder="Tìm kiếm"
-                    name="key_word"
+                    name="title"
                     className="flex-grow search-story"
                     rightSection={
                       <ActionIcon
@@ -203,7 +229,11 @@ const Header = () => {
                         variant="transparent"
                         aria-label="Submit search"
                       >
-                        <IconSearch size={18} stroke={1.5} />
+                        <IconSearch
+                          className="bg-gray-200 rounded"
+                          size={24}
+                          stroke={1.5}
+                        />
                       </ActionIcon>
                     }
                   />
@@ -220,7 +250,7 @@ const Header = () => {
                 <Menu.Target>
                   <UnstyledButton className="ml-4">
                     <Avatar
-                      src={user.avatarUrl}
+                      src={user?.avatar}
                       alt="Account item"
                       radius="xl" // rounded-full
                       size="lg" // h-12 w-12 approx
@@ -231,42 +261,46 @@ const Header = () => {
 
                 <Menu.Dropdown>
                   <Link to="/profile">
-                  <Menu.Item
-                    className="!p-0 !m-0 !w-full !rounded-none !bg-transparent"
-                    style={{ background: "transparent !important" }}
-                  >
-                    <div className="flex items-center gap-2 px-4 py-1 mx-2 rounded-3xl hover:bg-blue-500">
-                      <Avatar
-                        src={user.avatarUrl}
-                        alt="Account item"
-                        radius="xl"
-                        size="md"
-                        className="border-2 border-white"
-                      />
-                      <div>
-                        <Text
-                          size="sm"
-                          fw={500}
-                          className="flex items-center gap-1 text-gray"
-                        >
-                          <p className="text-black">{user.name}</p>
-                          <IconEdit color={textColor} size={14} stroke={1.5} />
-                        </Text>
-                        <Text
-                          c="dimmed"
-                          size="xs"
-                          className="flex items-center gap-1 text-black"
-                        >
-                          <IconCheck
-                            size={12}
-                            stroke={1.5}
-                            className="text-green-500"
-                          />
-                          Verified
-                        </Text>
+                    <Menu.Item
+                      className="!p-0 !m-0 !w-full !rounded-none !bg-transparent"
+                      style={{ background: "transparent !important" }}
+                    >
+                      <div className="flex items-center gap-2 px-4 py-1 mx-2 rounded-3xl hover:bg-blue-500">
+                        <Avatar
+                          src={user?.avatar}
+                          alt="Account item"
+                          radius="xl"
+                          size="md"
+                          className="border-2 border-white"
+                        />
+                        <div>
+                          <Text
+                            size="sm"
+                            fw={500}
+                            className="flex items-center gap-1 text-gray"
+                          >
+                            <p className="text-black">{user?.fullName}</p>
+                            <IconEdit
+                              color={textColor}
+                              size={14}
+                              stroke={1.5}
+                            />
+                          </Text>
+                          <Text
+                            c="dimmed"
+                            size="xs"
+                            className="flex items-center gap-1 text-black"
+                          >
+                            <IconCheck
+                              size={12}
+                              stroke={1.5}
+                              className="text-green-500"
+                            />
+                            Verified
+                          </Text>
+                        </div>
                       </div>
-                    </div>
-                  </Menu.Item>
+                    </Menu.Item>
                   </Link>
 
                   <Menu.Divider style={dropdownStyles.divider} />
@@ -316,7 +350,7 @@ const Header = () => {
                       <p className={`text-${textColor}`}>Đã lưu</p>
                     </Menu.Item>
                   </Link>
-                  <Link to="mylist">
+                  <Link to="profile?tab=myStories">
                     <Menu.Item
                       leftSection={
                         <IconList color={textColor} size={18} stroke={1.5} />
@@ -388,9 +422,7 @@ const Header = () => {
                       <IconLogout color={textColor} size={32} stroke={1.5} />
                     }
                     color={textColor}
-                    onClick={() => {
-                      console.log("Logout clicked");
-                    }}
+                    onClick={() => handleLogout()}
                     className="my-4"
                   >
                     <p className={`text-${textColor}`}>Đăng xuất</p>
@@ -415,29 +447,33 @@ const Header = () => {
                   </ActionIcon>
                 </Menu.Target>
                 <Menu.Dropdown>
-                  <Menu.Item
-                    component="a" // Or Link
-                    href="/signup"
-                  >
-                    <Text size="lg" fw="bold" className="!text-black">
-                      Tạo tài khoản
-                    </Text>{" "}
-                    {/* Use ! to force override */}
-                    <Text size="sm" className="!text-yellow-500 font-extrabold">
-                      Để có thể theo dõi những đầu truyện mới nhất
-                    </Text>
-                  </Menu.Item>
-                  <Menu.Item
-                    component="a" // Or Link
-                    href="/login"
-                  >
-                    <Text size="lg" fw="bold" className="!text-black">
-                      Đăng nhập
-                    </Text>
-                    <Text size="sm" className="!text-yellow-500 font-extrabold">
-                      Bạn đã có tài khoản rồi? Chào mừng trở lại
-                    </Text>
-                  </Menu.Item>
+                  <Link to="/signup">
+                    <Menu.Item>
+                      <Text size="lg" fw="bold" className="!text-black">
+                        Tạo tài khoản
+                      </Text>{" "}
+                      {/* Use ! to force override */}
+                      <Text
+                        size="sm"
+                        className="!text-yellow-500 font-extrabold"
+                      >
+                        Để có thể theo dõi những đầu truyện mới nhất
+                      </Text>
+                    </Menu.Item>
+                  </Link>
+                  <Link to="/login">
+                    <Menu.Item>
+                      <Text size="lg" fw="bold" className="!text-black">
+                        Đăng nhập
+                      </Text>
+                      <Text
+                        size="sm"
+                        className="!text-yellow-500 font-extrabold"
+                      >
+                        Bạn đã có tài khoản rồi? Chào mừng trở lại
+                      </Text>
+                    </Menu.Item>
+                  </Link>
                 </Menu.Dropdown>
               </Menu>
             )}
@@ -469,24 +505,24 @@ const Header = () => {
                   borderRadius: "12px",
                 }}
               >
-                {categories.map((category) => (
+                {topics?.map((topic) => (
                   <Menu.Item
-                    key={category.id}
+                    key={topic?.id}
                     className="font-sans hover:bg-blue-300 rounded"
                   >
                     <a href="/" className="text-dark no-underline">
-                      {category.namecategory}
+                      {topic?.name}
                     </a>
                   </Menu.Item>
                 ))}
               </Menu.Dropdown>
             </Menu>
-            <a
-              href="/poststory"
+            <Link
+              to="/poststory"
               className="text-lg font-extrabold text-gray-900 no-underline italic"
             >
               Viết truyện
-            </a>
+            </Link>
             {isAuthenticated ? (
               <Link
                 to="/setting?tab=payment"
@@ -520,8 +556,6 @@ const Header = () => {
               {/* Or use IconPremiumRights */}
               {/* <IconPremiumRights size={32} stroke={1.5} /> */}
             </ActionIcon>
-
-            {/* Search Dropdown */}
             <Menu
               shadow="md"
               width={240}
@@ -545,8 +579,6 @@ const Header = () => {
               >
                 {/* Prevent default dropdown styling */}
                 <form action="/search" method="GET" className="flex">
-                  {" "}
-                  {/* Replace with your search logic */}
                   <TextInput
                     placeholder="Tìm kiếm"
                     name="key_word"
@@ -561,7 +593,6 @@ const Header = () => {
                       </ActionIcon>
                     }
                   />
-                  {/* Add search result dropdown logic here if needed */}
                 </form>
               </Menu.Dropdown>
             </Menu>
@@ -575,7 +606,7 @@ const Header = () => {
                 <Menu.Target>
                   <UnstyledButton className="ml-4">
                     <Avatar
-                      src={user.avatarUrl}
+                      src={user?.avatar}
                       alt="Account item"
                       radius="xl" // rounded-full
                       size="lg" // h-12 w-12 approx
@@ -594,7 +625,7 @@ const Header = () => {
                   >
                     <div className="flex items-center gap-2 px-4 py-1 mx-2 rounded-3xl hover:bg-blue-500">
                       <Avatar
-                        src={user.avatarUrl}
+                        src={user?.avatar}
                         alt="Account item"
                         radius="xl"
                         size="md" // Slightly smaller avatar inside dropdown
@@ -606,7 +637,7 @@ const Header = () => {
                           fw={500}
                           className="flex items-center gap-1 text-gray"
                         >
-                          <p className="text-black">{user.name}</p>
+                          <p className="text-black">{user?.name}</p>
                           <IconEdit color={textColor} size={14} stroke={1.5} />
                         </Text>
                         <Text
@@ -736,9 +767,7 @@ const Header = () => {
                       <IconLogout color={textColor} size={32} stroke={1.5} />
                     }
                     color={textColor}
-                    onClick={() => {
-                      console.log("Logout clicked");
-                    }}
+                    onClick={() => handleLogout()}
                     className="my-4"
                   >
                     <p className={`text-${textColor}`}>Đăng xuất</p>
@@ -763,29 +792,32 @@ const Header = () => {
                   </ActionIcon>
                 </Menu.Target>
                 <Menu.Dropdown>
-                  <Menu.Item
-                    component="a" // Or Link
-                    href="/author/registeruser"
-                  >
-                    <Text size="lg" fw="bold" className="!text-black">
-                      Tạo tài khoản
-                    </Text>{" "}
-                    {/* Use ! to force override */}
-                    <Text size="sm" className="!text-yellow-500 font-extrabold">
-                      Để có thể theo dõi những đầu truyện mới nhất
-                    </Text>
-                  </Menu.Item>
-                  <Menu.Item
-                    component="a" // Or Link
-                    href="/author/loginuser"
-                  >
-                    <Text size="lg" fw="bold" className="!text-black">
-                      Đăng nhập
-                    </Text>
-                    <Text size="sm" className="!text-yellow-500 font-extrabold">
-                      Bạn đã có tài khoản rồi? Chào mừng trở lại
-                    </Text>
-                  </Menu.Item>
+                  <Link to="/signup">
+                    <Menu.Item>
+                      <Text size="lg" fw="bold" className="!text-black">
+                        Tạo tài khoản
+                      </Text>
+                      <Text
+                        size="sm"
+                        className="!text-yellow-500 font-extrabold"
+                      >
+                        Để có thể theo dõi những đầu truyện mới nhất
+                      </Text>
+                    </Menu.Item>
+                  </Link>
+                  <Link to="login">
+                    <Menu.Item>
+                      <Text size="lg" fw="bold" className="!text-black">
+                        Đăng nhập
+                      </Text>
+                      <Text
+                        size="sm"
+                        className="!text-yellow-500 font-extrabold"
+                      >
+                        Bạn đã có tài khoản rồi? Chào mừng trở lại
+                      </Text>
+                    </Menu.Item>
+                  </Link>
                 </Menu.Dropdown>
               </Menu>
             )}

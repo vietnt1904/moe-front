@@ -1,9 +1,9 @@
 import { Link } from "react-router-dom";
 
 const postStoryPath = "/writestory";
-const settingPath = "/setting";
-const loginPath = "/author/loginuser";
-const registerPath = "/author/registeruser";
+const paymentPath = "/setting?tab=payment";
+const loginPath = "/login";
+const registerPath = "/signup";
 const homePath = "/";
 const youtubeLink = "#";
 const facebookLink = "#";
@@ -25,12 +25,12 @@ const Footer = () => {
                             <Link onClick={() => window.scrollTo(0, 0)} to="/" className="block hover:underline">Tìm kiếm</Link>
                             <Link onClick={() => window.scrollTo(0, 0)} to={postStoryPath} className="block hover:underline">Viết truyện</Link>
                             <Link onClick={() => window.scrollTo(0, 0)} to="/" className="block hover:underline">Bộ lọc</Link>
-                            <Link onClick={() => window.scrollTo(0, 0)} to={settingPath} className="block hover:underline">Nạp xu</Link>
+                            <Link onClick={() => window.scrollTo(0, 0)} to={paymentPath} className="block hover:underline">Nạp xu</Link>
                         </div>
 
                         <div className="w-full lg:w-1/2 space-y-2 mb-6 lg:mb-0">
                             <Link onClick={() => window.scrollTo(0, 0)} to={homePath} className="block text-4xl md:text-5xl font-bold no-underline">
-                                Moe novel
+                                Ganymede
                             </Link>
                             <div className="flex  justify-around md:block">
                             <Link onClick={() => window.scrollTo(0, 0)} to={loginPath} className="block hover:underline">Đăng nhập</Link>
