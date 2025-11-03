@@ -2,7 +2,7 @@ import PropTypes from "prop-types";
 import { memo } from "react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useCurrentUser } from "../hooks/useCurrentUser";
+import { useCurrentUser } from "../hooks/useCurrentUser.js";
 
 const AuthWrapper = ({ children }) => {
     // get session using useCurrentUser hook

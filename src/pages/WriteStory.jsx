@@ -11,7 +11,8 @@ import {
   Grid,
   Textarea,
   FileButton,
-  MultiSelect, // Keep MultiSelect import
+  MultiSelect,
+  useMantineColorScheme, // Keep MultiSelect import
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import StoryService from "../services/StoryService";
@@ -19,6 +20,7 @@ import { useNavigate } from "react-router-dom";
 import { notifications } from "@mantine/notifications";
 import { useTopic } from "../hooks/useTopic";
 import { useGenre } from "../hooks/useGenre";
+import { getUserId } from "../utils";
 
 const phanLoaiOptions = [
   { value: "original", label: "Truyện sáng tác" },
@@ -33,7 +35,6 @@ const thoiGianDienRaOptions = [
   { value: "Không xác định", label: "Không xác định" },
 ];
 
-
 const ketTruyenOptions = [
   { value: "HE", label: "HE" },
   { value: "BE", label: "BE" },
@@ -43,15 +44,15 @@ const ketTruyenOptions = [
 
 const WriteStory = () => {
   // --- Constants ---
-  const MAX_WORDS = 3000;
   const navigate = useNavigate();
-  const user = localStorage.getItem("user");
+  const userId = getUserId();
 
   // --- UI State ---
-  const [wordCount, setWordCount] = useState(0);
   const [coverImagePreview, setCoverImagePreview] = useState(
     "/images/anh_bia_mac_dinh.png" // Default image
   );
+
+  const bgColor = "bg-[linear-gradient(90deg,_#037770_3.43%,_#FFC7C7_86.18%)]";
 
   const { data: topics } = useTopic();
   const { data: genres } = useGenre();
@@ -71,20 +72,16 @@ const WriteStory = () => {
   const form = useForm({
     initialValues: {
       title: "",
-      authorId: user ? JSON.parse(user).id : 1,
+      authorId: userId || 1,
       authorName: "",
       description: "",
-      ten_chuong: "",
       type: "original",
-      timeline: "hien_dai",
-      // --- Updated initial values for MultiSelect ---
+      timeline: "",
       genre: [], // Initialize as empty array for MultiSelect
       topic: [], // Initialize as empty array for MultiSelect
-      // --- End Update ---
       ending: "HE",
       is18Plus: false,
       releaseSchedule: [],
-      noi_dung: "",
       image: null,
     },
 
@@ -95,10 +92,8 @@ const WriteStory = () => {
         value.trim().length > 0 ? null : "Tác giả không được để trống",
       description: (value) =>
         value.trim().length > 0 ? null : "Giới thiệu không được để trống",
-      ten_chuong: (value) =>
-        value.trim().length > 0 ? null : "Tên chương không được để trống",
-      noi_dung: (value) =>
-        value.trim().length > 0 ? null : "Nội dung không được để trống",
+      timeline: (value) =>
+        value ? null : "Vui lòng chọn thời gian diễn ra câu chuyện",
       image: (value) => (value ? null : "Ảnh bìa là bắt buộc"),
       releaseSchedule: (value) =>
         value.length > 0 ? null : "Vui lòng chọn lịch ra chương",
@@ -127,15 +122,6 @@ const WriteStory = () => {
     return () => URL.revokeObjectURL(objectUrl);
   }, [form.values.image]);
 
-  // Effect for Word Count
-  useEffect(() => {
-    const words = form.values.noi_dung
-      .trim()
-      .split(/\s+/)
-      .filter((word) => word !== "");
-    setWordCount(words.length);
-  }, [form.values.noi_dung]);
-
   // --- Handlers ---
 
   // Custom handler for Checkbox.Group
@@ -157,23 +143,6 @@ const WriteStory = () => {
       );
     } else {
       form.setFieldValue("releaseSchedule", newSchedule);
-    }
-  };
-
-  // Custom handler for Textarea word count limit
-  const handleContentChangeWithLimit = (event) => {
-    const text = event.currentTarget.value;
-    const words = text
-      .trim()
-      .split(/\s+/)
-      .filter((word) => word !== "");
-
-    if (words.length <= MAX_WORDS) {
-      form.setFieldValue("noi_dung", text);
-    } else {
-      const trimmedText = words.slice(0, MAX_WORDS).join(" ");
-      form.setFieldValue("noi_dung", trimmedText);
-      setWordCount(MAX_WORDS);
     }
   };
 
@@ -223,12 +192,16 @@ const WriteStory = () => {
         });
         console.log("Error:", error);
       });
-      setIsLoading(false);
+    setIsLoading(false);
   };
+
+  const { colorScheme } = useMantineColorScheme();
 
   // --- Render ---
   return (
-    <div className="flex justify-center w-full px-[12.5%] mx-auto gap-4 min-h-screen pt-12 bg-[linear-gradient(90deg,_#037770_3.43%,_#FFC7C7_86.18%)]">
+    <div
+      className={`flex justify-center w-full px-[12.5%] mx-auto gap-4 min-h-screen pt-12 ${colorScheme === "dark" ? "" : bgColor} `}
+    >
       <div className="w-full lg:w-3/4 md:mr-28 lg:mr-48 mx-auto">
         <div className="pt-4 pb-8 mb-24 rounded-xl w-full font-bold text-left">
           <div className="pb-6">
@@ -263,29 +236,21 @@ const WriteStory = () => {
               required
               {...form.getInputProps("authorName")}
             />
-            <TextInput // Consider Textarea if needed
+            <Textarea
+              label={"Giới thiệu:"}
               size="lg"
-              label="Giới thiệu:"
+              placeholder="Nhập nội dung giới thiệu"
+              minRows={6}
+              maxRows={10}
+              autosize
               className="my-2"
               classNames={{
                 label: "text-xl font-bold text-white",
                 input:
-                  "h-10 pl-2 pr-8 rounded-lg border-solid border-gray-700 border-2 text-black bg-gray-200", // Adjust height if Textarea
+                  "w-full pl-2 py-2 pr-8 rounded-lg border-solid border-gray-700 border-2 text-black font-bold text-lg bg-gray-200",
               }}
               required
               {...form.getInputProps("description")}
-            />
-            <TextInput
-              size="lg"
-              label="Tên chương:"
-              className="my-2"
-              classNames={{
-                label: "text-xl font-bold text-white",
-                input:
-                  "h-10 pl-2 pr-8 rounded-lg border-solid border-gray-700 border-2 text-black bg-gray-200",
-              }}
-              required
-              {...form.getInputProps("ten_chuong")}
             />
 
             {/* --- Categorization --- */}
@@ -346,21 +311,18 @@ const WriteStory = () => {
               className="my-2"
               classNames={{
                 label: "text-xl font-bold text-white",
-                // Input might need height adjustment for multiple selections
                 input:
                   "min-h-10 w-full pl-2 pr-8 rounded-lg border-2 border-gray-700 bg-gray-200 font-bold text-black text-lg flex flex-wrap items-center",
                 dropdown: "bg-opacity-50 backdrop-blur-sm",
-                item: "text-lg font-bold text-black text-center hover:bg-gray-300", // Check item styling
-                // Add styles for selected value pills if needed
+                item: "text-lg font-bold text-black text-center hover:bg-gray-300",
                 pill: "bg-blue-500 text-white",
               }}
               // searchable
-              clearable // Allow clearing all selections
+              clearable
               withScrollArea={false}
               styles={{ dropdown: { maxHeight: 200, overflowY: "auto" } }}
-              // allowDeselect is implicit in MultiSelect
               required
-              {...form.getInputProps("genre")} // Bind to form state (expects/provides array)
+              {...form.getInputProps("genre")}
             />
             <MultiSelect
               label={"Chủ đề:"}
@@ -381,7 +343,7 @@ const WriteStory = () => {
               withScrollArea={false}
               styles={{ dropdown: { maxHeight: 200, overflowY: "auto" } }}
               required
-              {...form.getInputProps("topic")} // Bind to form state (expects/provides array)
+              {...form.getInputProps("topic")}
             />
 
             <Select
@@ -420,7 +382,8 @@ const WriteStory = () => {
                       root: "w-full",
                       labelWrapper: "w-full",
                       label: `flex items-center justify-center h-12 px-4 rounded-lg border-2 border-gray-700 cursor-pointer ${
-                        form.values.is18Plus === true
+                        form.values.is18Plus === true ||
+                        form.values.is18Plus === "true"
                           ? "bg-blue-500 text-white border-blue-500"
                           : "bg-gray-200 text-black hover:bg-gray-300"
                       }`,
@@ -436,7 +399,8 @@ const WriteStory = () => {
                       root: "w-full",
                       labelWrapper: "w-full",
                       label: `flex items-center justify-center h-12 px-4 rounded-lg border-2 border-gray-700 cursor-pointer ${
-                        form.values.is18Plus === false
+                        form.values.is18Plus === false ||
+                        form.values.is18Plus === "false"
                           ? "bg-blue-500 text-white border-blue-500"
                           : "bg-gray-200 text-black hover:bg-gray-300"
                       }`,
@@ -503,29 +467,6 @@ const WriteStory = () => {
               </div>
             </Checkbox.Group>
 
-            {/* --- Content --- */}
-            <Textarea
-              label={"Nội dung:"}
-              size="lg"
-              placeholder="Nội dung"
-              minRows={6}
-              maxRows={10}
-              autosize
-              className="my-2"
-              classNames={{
-                label: "text-xl font-bold text-white",
-                input:
-                  "w-full pl-2 py-2 pr-8 rounded-lg border-solid border-gray-700 border-2 text-black font-bold text-lg bg-gray-200",
-              }}
-              required
-              value={form.values.noi_dung}
-              onChange={handleContentChangeWithLimit}
-              error={form.errors.noi_dung}
-            />
-            <Text align="right" size="lg" className="text-gray-400">
-              {wordCount}/{MAX_WORDS}
-            </Text>
-
             {/* --- Cover Image --- */}
             <div className="my-2">
               <p className="text-lg font-semibold text-white mb-1">
@@ -581,7 +522,7 @@ const WriteStory = () => {
 
             {/* --- Action Buttons --- */}
             <Group position="center" className="pt-4">
-              <Button
+              {/* <Button
                 type="button"
                 onClick={() => {
                   const validationResult = form.validate();
@@ -597,7 +538,7 @@ const WriteStory = () => {
                 size="xl"
               >
                 Cài đặt khóa chương
-              </Button>
+              </Button> */}
               <Button
                 type="button"
                 loading={isLoading}
@@ -606,11 +547,11 @@ const WriteStory = () => {
                   if (!validationResult.hasErrors) {
                     handleFormSubmit(form.values, "luu_chuong");
                   } else {
-                    console.log("Validation Errors:", validationResult.errors);
-                    // form.validate(); // Re-run to display errors
+                    // console.log("Validation Errors:", validationResult.errors);
+                    form.validate(); // Re-run to display errors
                   }
                 }}
-                className="text-white text-xl font-bold px-6 py-2 mx-2 w-full sm:w-auto rounded bg-blue-500 hover:bg-blue-600"
+                className="text-white text-xl mx-auto font-bold px-6 py-2 w-full sm:w-auto rounded bg-blue-500 hover:bg-blue-600"
                 size="xl"
               >
                 Lưu chương

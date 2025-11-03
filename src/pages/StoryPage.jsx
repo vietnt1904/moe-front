@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import { useState, useRef } from "react";
 import {
   Container,
   Box,
@@ -17,18 +17,34 @@ import {
   ActionIcon,
   Center,
   Rating,
+  Tooltip,
 } from "@mantine/core";
 import { IconChevronUp } from "@tabler/icons-react";
 import { IconChevronDown } from "@tabler/icons-react";
 import { Clock4 } from "lucide-react";
-import { Download } from "lucide-react";
-import { MessageSquareMore } from "lucide-react";
 import { Eye } from "lucide-react";
 import StoryCard from "../components/StoryCard";
 import { Link, useParams, useNavigate, Navigate } from "react-router-dom";
-import { getIdTitleFromUrl, slugify, updateTime } from "../utils";
-import { useStoriesSameAuthor, useStory } from "../hooks/useStory";
+import {
+  convertNumber,
+  getIdTitleFromUrl,
+  getUserId,
+  slugify,
+  updateTime,
+} from "../utils";
+import {
+  useStoriesSameAuthor,
+  useStory,
+  useStoryFollowers,
+} from "../hooks/useStory";
 import { useChaptersByStoryId } from "../hooks/useChapter";
+import RateService from "../services/RateService.js";
+import { notifications } from "@mantine/notifications";
+import CommentService from "../services/CommentService.js";
+import { useCommentsByStoryId } from "../hooks/useComment.js";
+import { Pagination } from "react-bootstrap";
+import { useSaved } from "../hooks/useUser";
+import UserService from "../services/UserService.js";
 // Import icons if using an icon library
 // import { IconClock, IconFlame, IconChevronDown, IconChevronUp, IconDots, IconEye, IconMessageCircle, IconDownload } from '@tabler/icons-react';
 
@@ -37,25 +53,54 @@ const StoryPage = () => {
   const { title: url } = useParams();
   const navigate = useNavigate();
   const { id, slug } = getIdTitleFromUrl(url); // id của story
-  const { data: story, error: storyError } = useStory(id, slug);
+  const { data: story } = useStory(id, slug);
   const { data: chapters } = useChaptersByStoryId(id);
+  const { data: followers } = useStoryFollowers(id);
+
   const { data: sameAuthorStories } = useStoriesSameAuthor(story?.Author?.id);
+  const [page, setPage] = useState(1);
+  const LIMIT = 10;
 
   const defaultBannerImage =
     "https://m.yodycdn.com/blog/hinh-nen-thien-nhien-4k-yody-vn-115.jpg";
 
   const [activeTab, setActiveTab] = useState("rating"); // 'rating' or 'discussion'
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [orderBy, setOrderBy] = useState("time"); // Time hoặc like
+  const [isDesc, setIsDesc] = useState(true);
   const [showAllChapters, setShowAllChapters] = useState(false);
   const [rating, setRating] = useState(5); // Use Mantine Rating state
+  const [ratingText, setRatingText] = useState("");
   const [expandedComments, setExpandedComments] = useState({}); // { commentId: true/false }
-  const [commentsData, setCommentsData] = useState([]);
+  const { data: dataComments } = useCommentsByStoryId(
+    id,
+    page,
+    LIMIT,
+    orderBy,
+    isDesc
+  );
+  const totalPages = Math.floor(dataComments?.totalComments / LIMIT) + 1 || 1;
+  const commentsData = dataComments?.comments || [];
+  const [commentText, setCommentText] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const chapterListRef = useRef(null); // For scrolling
 
   const initialVisibleChapters = 10;
+  const userId = getUserId();
 
-  if (!id || !slug || storyError) {
+  const { data: isSaved } = useSaved(userId, id);
+
+  const [isStorySaved, setIsStorySaved] = useState(isSaved);
+
+  const [isLoadingSaveStory, setIsLoadingSaveStory] = useState(false);
+  const isRead = JSON.parse(localStorage.getItem(`bookmark${id}`) || "{}");
+
+  const continueReading = chapters?.find(
+    (chapter) => chapter?.id === isRead?.chapter
+  );
+
+  if (!id || !slug) {
     return <Navigate to="/" replace />;
   }
 
@@ -95,15 +140,62 @@ const StoryPage = () => {
     }
   };
 
-  const handleSubmitRating = (event) => {
+  const isAuthor = story?.authorId === userId;
+
+  const handleSubmitRating = async (event) => {
+    setIsLoading(true);
     event.preventDefault();
-    // Add actual API call logic here
+    const userId = userId || 1; // 1 là id người dùng ẩn danh
+    const storyId = id;
+    const submitRating = await RateService.addRateByStoryId(
+      userId,
+      storyId,
+      rating,
+      ratingText
+    );
+    if (submitRating) {
+      setRating(5);
+      setRatingText("");
+      notifications.show({
+        title: "Đánh giá truyện thành công",
+        message: "Cảm ơn bạn đã đánh giá truyện",
+        color: "green",
+      });
+    } else {
+      notifications.show({
+        title: "Đánh giá truyện thất bại",
+        message: "Vui lòng thử lại sau",
+        color: "red",
+      });
+    }
+    setIsLoading(false);
   };
 
-  const handleSubmitComment = (event) => {
+  const handleSubmitComment = async (event) => {
     event.preventDefault();
-    // Add actual API call logic here
-    event.target.reset(); // Clear textarea
+    setIsLoading(true);
+    const userId = userId || 1;
+    const submitComment = await CommentService.addCommentByUserId(
+      userId,
+      id,
+      null,
+      commentText
+    );
+    if (submitComment) {
+      setCommentText("");
+      notifications.show({
+        title: "Bình luận truyện thành công",
+        message: "Cảm ơn bạn đã bình luận truyện",
+        color: "green",
+      });
+    } else {
+      notifications.show({
+        title: "Bình luận truyện thất bại",
+        message: "Vui lòng thử lại sau",
+        color: "red",
+      });
+    }
+    setIsLoading(false);
   };
 
   const handleScrollToChapterList = () => {
@@ -113,6 +205,62 @@ const StoryPage = () => {
         block: "start",
       });
     }
+  };
+
+  const dataSelect = [
+    { label: "Mới nhất", value: "desc" },
+    { label: "Cũ nhất", value: "asc" },
+    { label: "Nhiều lượt thích nhất", value: "like" },
+  ];
+
+  const handleSelectComment = (e) => {
+    if (!e) {
+      setOrderBy("time");
+      setIsDesc(true);
+      return;
+    }
+    if (e === "like") {
+      setOrderBy("like");
+      setIsDesc(true);
+      return;
+    } else {
+      // asc hoặc desc
+      setOrderBy("time");
+      const setDesc = e === "desc";
+      setIsDesc(setDesc);
+      return;
+    }
+  };
+
+  const handleSaveStory = async () => {
+    let success;
+    setIsLoadingSaveStory(true);
+    if (isStorySaved) {
+      success = await UserService.updateSaveStory(userId, id, false);
+    } else {
+      success = await UserService.updateSaveStory(userId, id, true);
+    }
+    if (success) {
+      setIsStorySaved(!isStorySaved);
+      notifications.show({
+        title: isStorySaved
+          ? "Bỏ theo dõi truyện thành công"
+          : "Theo dõi truyện thành công",
+        message: isStorySaved
+          ? "Bạn đã bỏ theo dõi truyện"
+          : "Cảm ơn bạn đã theo dõi truyện",
+        color: "green",
+      });
+    } else {
+      notifications.show({
+        title: isStorySaved
+          ? "Bỏ theo dõi truyện thất bại"
+          : "Theo dõi truyện thất bại",
+        message: "Vui lòng thử lại sau",
+        color: "red",
+      });
+    }
+    setIsLoadingSaveStory(false);
   };
 
   return (
@@ -169,26 +317,28 @@ const StoryPage = () => {
                       md="lg"
                       className="not-italic font-bold whitespace-nowrap"
                     >
-                      Cập nhật {updateTime(story?.updatedAt)}
+                      Cập nhật {updateTime(story?.lastUpdate)}
                     </Text>
                   </Group>
                 </Group>
-                <Text
-                  fw={700}
-                  size="lg"
-                  md="xl"
-                  lg="3xl"
-                  className="italic font-bold pl-1 md:pl-4"
-                >
-                  {story?.Author?.fullName}
-                </Text>
+                <Link to={`/author/${story?.Author?.id}`}>
+                  <Text
+                    fw={700}
+                    size="lg"
+                    md="xl"
+                    lg="3xl"
+                    className="italic font-bold pl-1 md:pl-4 hover:underline cursor-pointer"
+                  >
+                    {story?.Author?.fullName}
+                  </Text>
+                </Link>
               </Stack>
 
               <Stack gap="md">
                 <Group gap="xs" wrap="wrap">
                   {story?.Topics?.map((tag) => (
                     <Badge
-                      key={tag}
+                      key={tag.id}
                       variant="filled"
                       color="white"
                       radius="sm"
@@ -201,12 +351,6 @@ const StoryPage = () => {
                       {tag.name}
                     </Badge>
                   ))}
-
-                  <img
-                    src="https://png.pngtree.com/png-vector/20221227/ourmid/pngtree-orange-cartoon-cute-flame-png-image_6510196.png"
-                    alt="Hot"
-                    className="w-3 md:w-4 lg:w-6 h-auto"
-                  />
                 </Group>
 
                 {/* Action Buttons */}
@@ -223,6 +367,27 @@ const StoryPage = () => {
                   >
                     Chương
                   </Button>
+                  {isRead && continueReading && (
+                    <Button
+                      color="white"
+                      classNames={{
+                        label: "text-black font-extrabold",
+                      }}
+                      variant="default"
+                      radius="sm"
+                      size="xs"
+                      md="sm"
+                      onClick={() =>
+                        navigate(
+                          `${slugify(continueReading?.title)}-${
+                            continueReading?.id
+                          }`
+                        )
+                      }
+                    >
+                      Đọc tiếp
+                    </Button>
+                  )}
                   <Button
                     color="white"
                     classNames={{
@@ -234,43 +399,35 @@ const StoryPage = () => {
                     md="sm"
                     onClick={() =>
                       navigate(
-                        `${slugify(chapters[chapters.length - 1]?.title)}-${
-                          chapters[chapters.length - 1]?.id
-                        }`
-                      )
-                    }
-                  >
-                    Đọc tiếp
-                  </Button>
-                  <Button
-                    color="white"
-                    classNames={{
-                      label: "text-black font-extrabold",
-                    }}
-                    variant="default"
-                    radius="sm"
-                    size="xs"
-                    md="sm"
-                    onClick={() =>
-                      navigate(
-                        `${slugify(chapters[0]?.title)}-${chapters[0]?.id}`
+                        `${slugify(chapters[chapters?.length - 1]?.title)}-${chapters[chapters?.length - 1]?.id}`
                       )
                     }
                   >
                     Đọc từ đầu
                   </Button>
-                  <Button
-                    color="white"
-                    classNames={{
-                      label: "text-black font-extrabold",
-                    }}
-                    variant="default"
-                    radius="sm"
-                    size="xs"
-                    md="sm"
-                  >
-                    Theo dõi
-                  </Button>
+                  { !isAuthor && userId && (userId !== 1) && (
+                    <Button
+                      color="white"
+                      classNames={{
+                        label: "text-black font-extrabold",
+                      }}
+                      variant="default"
+                      radius="sm"
+                      size="xs"
+                      md="sm"
+                      onClick={handleSaveStory}
+                      loading={isLoadingSaveStory}
+                      disabled={isLoadingSaveStory}
+                    >
+                      {isStorySaved !== undefined && isStorySaved !== null
+                        ? isStorySaved
+                          ? "Bỏ theo dõi"
+                          : "Theo dõi"
+                        : isSaved
+                        ? "Bỏ theo dõi"
+                        : "Theo dõi"}
+                    </Button>
+                  )}
                 </Group>
 
                 {/* Stats */}
@@ -304,7 +461,7 @@ const StoryPage = () => {
                     <Text>Đánh giá</Text>
                   </Stack>
                   <Stack align="center" gap={0} className="px-2 md:px-6 py-1">
-                    <Text fw={700}>{story?.followers?.toLocaleString()}</Text>
+                    <Text fw={700}>{followers?.toLocaleString()}</Text>
                     <Text>Lượt theo dõi</Text>
                   </Stack>
                 </Group>
@@ -369,13 +526,11 @@ const StoryPage = () => {
             >
               Danh sách chương
             </Title>
-            {
-              chapters?.length === 0 && (
-                <Text size="lg" className="text-center">
-                  Chưa có chương nào. Hãy quay lại sau.
-                </Text>
-              )
-            }
+            {chapters?.length === 0 && (
+              <Text size="lg" className="text-center">
+                Chưa có chương nào. Hãy quay lại sau.
+              </Text>
+            )}
             {chapters?.map((chapter) => (
               <Link
                 to={`${slugify(chapter?.title)}-${chapter?.id}`}
@@ -390,25 +545,17 @@ const StoryPage = () => {
                 >
                   <div className="flex items-center justify-between w-full">
                     <Text fw={500} c={"gray.8"} span>
-                      {`Chương ${chapter?.chapterNumber}`}
+                      {`Chương ${convertNumber(chapter?.chapterNumber)}`}
                       {chapter?.title ? `: ${chapter?.title}` : ""}
                     </Text>
-                    <Group gap="xs" w={"auto"}>
-                      <Eye
-                        src="/images/mat_xanh.png"
-                        className="w-5 h-5 md:w-6 md:h-6"
-                        alt="Views"
-                      />
-                      <MessageSquareMore
-                        src="/images/tin_nhan.png"
-                        className="w-5 h-5 md:w-6 md:h-6"
-                        alt="Comments"
-                      />
-                      <Download
-                        src="/images/tai_xuong.png"
-                        className="w-5 h-5 md:w-6 md:h-6"
-                        alt="Download"
-                      />
+                    <Group gap="xs" wrap="nowrap">
+                      {/* Placeholder icons/stats for chapters */}
+                      <Tooltip label="Lượt xem chương" openDelay={500}>
+                        <Group gap={2}>
+                          <Text size="xs">{chapter?.views ?? 0}</Text>
+                          <Eye size={14} strokeWidth={1.5} />
+                        </Group>
+                      </Tooltip>
                     </Group>
                   </div>
                 </Paper>
@@ -463,11 +610,7 @@ const StoryPage = () => {
               activeTab === "rating" ? "block" : "hidden"
             }`}
           >
-            <Box
-              component="form"
-              onSubmit={handleSubmitRating}
-              className="flex flex-col items-center"
-            >
+            <Box component="form" className="flex flex-col items-center">
               <Rating
                 size="xl"
                 value={rating}
@@ -477,6 +620,8 @@ const StoryPage = () => {
               />
               <Textarea
                 name="ratingText"
+                value={ratingText}
+                onChange={(e) => setRatingText(e.target.value)}
                 placeholder="Hãy nêu cảm nghĩ của bạn nhé: ..."
                 radius="lg" // rounded-3xl equivalent
                 size="lg"
@@ -493,6 +638,9 @@ const StoryPage = () => {
                 radius="xl"
                 size="lg"
                 className="text-white font-bold text-xl md:text-2xl"
+                loading={isLoading}
+                disabled={isLoading}
+                onClick={handleSubmitRating}
               >
                 Gửi đánh giá
               </Button>
@@ -507,23 +655,16 @@ const StoryPage = () => {
           >
             {/* Comment Form */}
             <Center className="w-full mb-12">
-              <Box
-                component="form"
-                onSubmit={handleSubmitComment}
-                className="w-full md:w-2/3 flex flex-col"
-              >
-                <Textarea
-                  name="commentText"
-                  placeholder="Thảo luận:......"
-                  radius="lg"
-                  size="md"
-                  minRows={3}
-                  className="h-36 w-full p-4 bg-gray-800 text-white placeholder:text-gray-300"
-                  classNames={{
-                    root: "rounded-2xl",
-                    input: "text-white font-semibold text-lg md:text-xl",
-                  }}
-                />
+              <Box component="form" className="w-full md:w-2/3 flex flex-col">
+                <div className=" bg-gray-800 p-4 rounded-lg">
+                  <textarea
+                    name="commentText"
+                    placeholder="Thảo luận:......"
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    className="h-32 w-full p-2 text-black placeholder:text-gray-400 rounded-lg"
+                  />
+                </div>
                 <Group justify="flex-end" mt="sm">
                   <Button
                     type="submit"
@@ -531,6 +672,9 @@ const StoryPage = () => {
                     radius="xl"
                     size="md"
                     className="text-white font-bold text-lg md:text-xl px-6"
+                    onClick={handleSubmitComment}
+                    loading={isLoading}
+                    disabled={isLoading}
                   >
                     Gửi
                   </Button>
@@ -542,15 +686,15 @@ const StoryPage = () => {
             <Box className="mt-8">
               <Group justify="space-between" mb="lg">
                 <Text size="xl" fw={700}>
-                  {commentsData?.length} thảo luận
+                  {commentsData?.length || 0} thảo luận
                 </Text>
                 <Select
                   placeholder="Sắp xếp theo"
-                  data={["Mới nhất", "Cũ nhất", "Nhiều lượt thích nhất"]}
-                  defaultValue="Mới nhất"
+                  data={dataSelect}
+                  defaultValue={"desc"}
                   radius="xl"
                   className="bg-gray-800 text-white font-bold rounded-full"
-                  // Note: Mantine Select styling might differ from raw select
+                  onChange={handleSelectComment}
                 />
               </Group>
 
@@ -560,27 +704,28 @@ const StoryPage = () => {
                     <Paper
                       p="md"
                       radius="xl" // rounded-3xl
-                      className="relative bg-gray-800 text-white w-full"
+                      className="relative bg-gray-800 text-black w-full"
                     >
                       <Group justify="space-between" align="flex-start" mb="xs">
                         <Group gap="xs" align="flex-end">
                           <Image
-                            src={comment?.avatar}
+                            src={comment?.User?.avatar}
                             alt="avatar"
                             w={32}
                             h={32}
+                            className="min-w-[32px] min-h-[32px] rounded-full"
                             radius="50%"
                           />
                           <Text size="lg" fw={700}>
-                            {comment?.author}
+                            {comment?.User?.fullName}
                           </Text>
                           <Text size="sm" c="dimmed">
-                            {comment?.timestamp}
+                            {updateTime(comment?.createdAt)}
                           </Text>
                         </Group>
                         <ActionIcon
                           variant="transparent"
-                          className="text-white"
+                          className="text-black"
                         >
                           {/* <IconDots /> */} . . .
                         </ActionIcon>
@@ -589,7 +734,7 @@ const StoryPage = () => {
                       <Box className="relative mx-4 md:mx-12 pb-6">
                         <Text
                           size="md" // text-lg equivalent
-                          className="text-white transition-all duration-300"
+                          className="text-black transition-all duration-300"
                           style={{
                             maxHeight: expandedComments[comment?.id]
                               ? "none"
@@ -604,7 +749,7 @@ const StoryPage = () => {
                           variant="subtle"
                           size="xs"
                           onClick={() => toggleCommentExpansion(comment?.id)}
-                          className="absolute bottom-0 right-0 text-xs text-white bg-gray-900/50 hover:bg-gray-900/80 px-2 py-1 rounded"
+                          className="absolute bottom-0 right-0 text-xs text-black bg-gray-900/50 hover:bg-gray-900/80 px-2 py-1 rounded"
                         >
                           {expandedComments[comment?.id]
                             ? "Thu gọn"
@@ -623,6 +768,13 @@ const StoryPage = () => {
                     </Group>
                   </Box>
                 ))}
+                <Center mt="xl">
+                  <Pagination
+                    total={totalPages}
+                    value={page}
+                    onChange={setPage}
+                  />
+                </Center>
               </Stack>
 
               {/* Load More Comments Button */}

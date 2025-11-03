@@ -1,22 +1,27 @@
-import { AppShell } from "@mantine/core";
+import { AppShell, useMantineColorScheme } from "@mantine/core";
 import { Outlet, ScrollRestoration } from "react-router-dom";
 import Header from "./layout/Header";
 import Footer from "./layout/Footer";
 import { CircleArrowUp } from "lucide-react";
 import { useState } from "react";
 import { useEffect } from "react";
+// import { useCurrentUser } from "../hooks/useCurrentUser.js";
 
 const Layout = () => {
   // const { isOpen } = useNavbarStore();
   // get session using useCurrentUser hook
   // const { session, isLoading } = useCurrentUser();
 
-  // useNavigate hook to navigate page
+  // // useNavigate hook to navigate page
   // const navigate = useNavigate();
 
   // useEffect(() => {
-  //     // If session is null, navigate to login page
-  //     if (!isLoading && !session) navigate("/");
+  //   // If session is null, navigate to login page
+  //   if (!isLoading && !session) {
+  //     localStorage.removeItem("token");
+  //     localStorage.removeItem("user");
+  //     navigate("/login");
+  //   }
   // }, [session, navigate, isLoading]);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -39,6 +44,8 @@ const Layout = () => {
   //   window.open("https://www.youtube.com", "_blank");
   // };
 
+  const { colorScheme } = useMantineColorScheme();
+
   return (
     <AppShell
       transitionDuration={500}
@@ -47,13 +54,22 @@ const Layout = () => {
     >
       <ScrollRestoration />
       {/* Main App */}
-      <AppShell.Main className="bg-[linear-gradient(90deg,_#9AFDF7_3.43%,_#FFC7C7_86.18%)] shadow-[0px_4px_4px_rgba(0,0,0,0.5)] flex flex-col min-h-screen">
+      <AppShell.Main
+        className={`shadow-[0px_4px_4px_rgba(0,0,0,0.5)] flex flex-col min-h-screen ${
+          colorScheme === "dark"
+            ? "bg-neutral-900"
+            : "bg-[linear-gradient(90deg,_#9AFDF7_3.43%,_#FFC7C7_86.18%)]"
+        } `}
+      >
         <Header />
         <Outlet />
         <Footer />
       </AppShell.Main>
       {showScrollTop && (
-        <AppShell.Footer position="right-bottom" className="fixed bottom-4 right-4 z-50">
+        <AppShell.Footer
+          position="right-bottom"
+          className="fixed bottom-4 right-4 z-50"
+        >
           <div className="fixed bottom-4 right-4 z-50">
             <button
               onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}

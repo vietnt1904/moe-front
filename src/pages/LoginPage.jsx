@@ -1,5 +1,6 @@
 import { LockIcon } from "lucide-react";
 import { useState } from "react";
+import { notifications } from "@mantine/notifications";
 import { Link, useNavigate } from "react-router-dom";
 import AuthService from "../services/AuthService";
 import { useForm } from "react-hook-form";
@@ -10,33 +11,33 @@ const googleLogoUrl =
 
 function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
-  const [error, setError] = useState(null); // To store login error messages
-  const [successMessage, setSuccessMessage] = useState(null); // To store success messages
   const [loading, setLoading] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const { register, handleSubmit } = useForm();
 
   const navigate = useNavigate();
 
-  // --- Replace this with your actual API call logic ---
   const onSubmit = async (data) => {
     const { email, password } = data;
     setLoading(true);
-    setError(null);
-    setSuccessMessage(null);
-
-    // await new Promise((resolve) => setTimeout(resolve, 1500));
 
     await AuthService.login(email, password)
       .then(() => {
-        setSuccessMessage("Login successful! Redirecting...");
+        notifications.show({
+          color: "green",
+          title: "Đăng nhập thành công",
+          message: "Đăng nhập thành công. Chuyển hướng tới trang chủ.",
+        });
         setLoading(false);
         navigate("/");
       })
-      .catch((error) => {
-        console.error("Login error:", error);
+      .catch(() => {
+        notifications.show({
+          color: "red",
+          title: "Lỗi khi đăng nhập",
+          message: "Tên đăng nhập hoặc mật khẩu không đúng",
+        });
         setLoading(false);
-        setError("Invalid email or password.");
       });
   };
 
@@ -69,53 +70,10 @@ function LoginPage() {
 
           <div className="flex absolute right-0 top-0 bottom-0 w-full md:w-[calc(80%-16rem)] h-full rounded-l-none md:rounded-l-[78px] backdrop-blur-lg justify-center items-center p-4 md:p-8">
             <div className="w-full max-w-sm md:max-w-md">
-              {error && (
-                <div
-                  className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"
-                  role="alert"
-                >
-                  <strong className="font-bold">Error: </strong>
-                  <span className="block sm:inline">{error}</span>
-                  <button
-                    onClick={() => setError(null)}
-                    className="absolute top-0 bottom-0 right-0 px-4 py-3"
-                  >
-                    <svg
-                      className="fill-current h-6 w-6 text-red-500"
-                      role="button"
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 20 20"
-                    >
-                      <title>Close</title>
-                      <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z" />
-                    </svg>
-                  </button>
-                </div>
-              )}
-              {successMessage && (
-                <div
-                  className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4"
-                  role="alert"
-                >
-                  <strong className="font-bold">Success: </strong>
-                  <span className="block sm:inline">{successMessage}</span>
-                  <button
-                    onClick={() => setSuccessMessage(null)}
-                    className="absolute top-0 bottom-0 right-0 px-4 py-3"
-                  >
-                    <svg
-                      className="fill-current h-6 w-6 text-green-500"
-                      role="button"
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 20 20"
-                    >
-                      <title>Close</title>
-                      <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z" />
-                    </svg>
-                  </button>
-                </div>
-              )}
-              <form onSubmit={handleSubmit((data) => onSubmit(data))} className="w-full">
+              <form
+                onSubmit={handleSubmit((data) => onSubmit(data))}
+                className="w-full"
+              >
                 <div className="mb-6 text-center">
                   <h2 className="text-2xl text-white py-2">
                     Chào mừng
@@ -128,7 +86,6 @@ function LoginPage() {
                     !
                   </h2>
                   <p className="text-sm text-gray-300 py-1">
-                    {" "}
                     Mỗi trang truyện là một phiêu lưu mới
                   </p>
                 </div>
@@ -174,12 +131,12 @@ function LoginPage() {
                     />
                     Remember me
                   </label>
-                  <a
-                    href="#"
+                  <Link
+                    to={"/forgetpassword"}
                     className="text-gray-300 hover:text-white hover:underline"
                   >
                     Recovery password
-                  </a>
+                  </Link>
                 </div>
 
                 <button

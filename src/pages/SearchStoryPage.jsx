@@ -19,11 +19,12 @@ import {
   Pagination,
   Select,
 } from "@mantine/core";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useSearchStories } from "../hooks/useStory"; // Đường dẫn tới hook của bạn
 import { IconSearch, IconX, IconMoodSad } from "@tabler/icons-react";
 import { slugify, updateTime } from "../utils"; // Giả sử bạn có các utils này
 import { useTopic } from "../hooks/useTopic";
+import { useEffect } from "react";
 
 const StoryCard = ({ story }) => {
   // Component con để hiển thị mỗi truyện, có thể tách ra file riêng
@@ -62,7 +63,7 @@ const StoryCard = ({ story }) => {
           </Text>
         )}
         <Text size="xs" c="dimmed" className="mb-2">
-          Cập nhật: {updateTime(story?.updatedAt)}
+          Cập nhật: {updateTime(story?.createdAt)}
         </Text>
         <Group gap="xs" wrap="nowrap" className="mt-auto">
           {story?.views && (
@@ -90,18 +91,22 @@ const SearchStoryPage = () => {
   const [searchTerm, setSearchTerm] = useState(title || "");
   const [searchAuthor, setSearchAuthor] = useState("");
   const [topic, setTopic] = useState(topicId || "0");
+  const navigate = useNavigate();
 
   // Các state này sẽ được dùng để trigger query khi người dùng nhấn "Tìm"
   const [activeSearchTerm, setActiveSearchTerm] = useState(title || "");
   const [activeSearchAuthor, setActiveSearchAuthor] = useState("");
 
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-    isFetching, // Hữu ích để hiển thị loading khi query params thay đổi
-  } = useSearchStories(page, limit, activeSearchTerm, activeSearchAuthor);
+  const { data, isLoading, isError, error, isFetching } = useSearchStories(
+    page,
+    limit,
+    activeSearchTerm,
+    activeSearchAuthor
+  );
+
+  useEffect(() => {
+    setTopic(topicId);
+  }, [topicId]);
   const storyData = data?.stories || [];
   const total = data?.total || 0;
   const totalPages = Math.ceil(total / limit);
@@ -138,6 +143,14 @@ const SearchStoryPage = () => {
     setSearchAuthor("");
     if (activeSearchAuthor) {
       setActiveSearchAuthor("");
+    }
+  };
+
+  const handleChangeTopic = (value) => {
+    if (value === topic) {
+      setTopic("0");
+    } else {
+      setTopic(value);
     }
   };
 
@@ -226,7 +239,22 @@ const SearchStoryPage = () => {
 
       <div className="flex gap-4 pb-8">
         <p className="font-semibold text-lg">Lọc theo thể loại:</p>
-        <Select data={topicsOptions} onChange={setTopic} value={topic} defaultValue={topic} />
+        {/* <Select data={topicsOptions} onChange={setTopic} value={topic} defaultValue={topic}/> */}
+        <select
+          className="p-2 border rounded-md bg-white text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm hover:border-blue-400 transition-all"
+          name="topic"
+          value={topic}
+          onChange={(e) => {
+            setTopic(e.target.value);
+            navigate(`/search?topic=${e.target.value}`);
+          }}
+        >
+          {topicsOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       {isLoading && ( // Loading ban đầu

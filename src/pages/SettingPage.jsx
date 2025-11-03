@@ -14,15 +14,17 @@ import {
   PasswordInput,
   Group,
   Image,
-  BackgroundImage,
   FileButton, // Import Image from Mantine for QR code etc.
 } from "@mantine/core";
 import { IconCamera } from "@tabler/icons-react"; // Example icon
 import PropTypes from "prop-types";
-import { useSearchParams } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
 import { useUser } from "../hooks/useUser";
 import UserService from "../services/UserService";
+import { notifications } from "@mantine/notifications";
+import { useForm } from "@mantine/form";
+import { getUserId } from "../utils";
 
 // --- Placeholder Data ---
 // In a real app, fetch this data or get it from context/props
@@ -105,8 +107,8 @@ const PersonalInfo = ({ onUpdateClick }) => {
     onUpdateClick: PropTypes.func.isRequired,
   };
 
-  const userId = JSON.parse(localStorage.getItem("user"))?.id;
-  const {data: user} = useUser(userId);
+  const userId = getUserId();
+  const { data: user } = useUser(userId);
   return (
     <div className=" shadow-[2px_2px_2px_2px_rgba(0,0,0,0.4)] rounded-[30px]">
       <Paper
@@ -209,9 +211,6 @@ Vào phần quản lý thông tin tài khoản -> xoá tài khoản.`}
 
 const PaymentMethods = () => {
   const qrCodeUrl = "/images/qr_code.jpg"; // Placeholder QR
-  const momoLogo = "/images/momo.jpg"; // Placeholder path
-  const paypalLogo = "/images/paypal.jpg"; // Placeholder path
-  const zaloPayLogo = "/images/zalopay.jpg"; // Placeholder path
 
   return (
     <div className=" shadow-[2px_2px_2px_2px_rgba(0,0,0,0.4)] rounded-[30px]">
@@ -252,65 +251,29 @@ const PaymentMethods = () => {
           />
         </Group>
 
-        <Title order={3} className="mb-2 mt-6 pt-4 pb-8">
-          Liên kết ví điện tử
+        <Title order={3} className="mb-2 mt-6 pt-4">
+          Nội dung chuyển khoản
         </Title>
-        <Group position="center" spacing="lg" className="mb-4 pb-4 w-full">
-          <div className="flex justify-center gap-6 mx-auto">
-            <Button
-              variant="unstyled"
-              p={0}
-              w={80}
-              h={80}
-              radius={"md"}
-              className="focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-sm"
-            >
-              <Image
-                src={momoLogo}
-                alt="MOMO"
-                w={80}
-                h={80}
-                radius="md"
-                fit="fill"
-              />
-            </Button>
-            <Button
-              variant="unstyled"
-              p={0}
-              w={80}
-              h={80}
-              radius={"md"}
-              className="focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-sm"
-            >
-              <Image src={paypalLogo} alt="PAYPAL" w={80} h={80} radius="md" />
-            </Button>
-            <Button
-              variant="unstyled"
-              p={0}
-              w={80}
-              h={80}
-              radius={"md"}
-              className="focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-sm"
-            >
-              <Image
-                src={zaloPayLogo}
-                alt="ZALOPAY"
-                w={80}
-                h={80}
-                radius="md"
-              />
-            </Button>
-          </div>
-        </Group>
+        <Text fw={600} mb={0}>
+          (số điện thoại) - (Email) - Nạp linh thạch medegany
+        </Text>
+        <Text size="sm" mb={10}>
+          VD: (0123456789) - email@example.com - Nạp linh thạch medegany
+        </Text>
+        <Text size="sm" fw={500}>
+          Nếu có vấn đề, vui lòng liên hệ: 0123456789<br /> Hoặc qua email: Email@example.com
+        </Text>
       </Paper>
     </div>
   );
 };
 
+// eslint-disable-next-line react/prop-types
 const UpdateInfoForm = ({ onUpdateClick }) => {
-  UpdateInfoForm.propTypes = { setActiveSection: PropTypes.func.isRequired };
-  const userId = JSON.parse(localStorage.getItem("user"))?.id;
+  UpdateInfoForm.propTypes = { setActiveSection: PropTypes.func };
+  const userId = getUserId();
   const { data: userInfor } = useUser(userId);
+
   useEffect(() => {
     if (userInfor) {
       setFormData((prev) => ({
@@ -319,11 +282,8 @@ const UpdateInfoForm = ({ onUpdateClick }) => {
         backgroundImage: userInfor.backgroundImage || "",
         fullName: userInfor.fullName || "",
         email: userInfor.email || "",
+        username: userInfor.username || "",
         dob: userInfor.dob ? userInfor.dob.split("T")[0] : "",
-        gender: userInfor.gender || "",
-        facebook: userInfor.facebook || "",
-        tiktok: userInfor.tiktok || "",
-        blog: userInfor.blog || "",
       }));
       setAvatarPreview(userInfor.avatar || "/images/avatar_mac_dinh.png");
       setCoverImagePreview(
@@ -337,12 +297,9 @@ const UpdateInfoForm = ({ onUpdateClick }) => {
     backgroundImage: "",
     fullName: "",
     email: "",
+    username: "",
     dob: "",
-    gender: "",
-    facebook: "",
-    tiktok: "",
-    blog: "",
-    nowPassword: "",
+    password: "",
     newPassword: "",
     renewPassword: "",
   });
@@ -366,10 +323,103 @@ const UpdateInfoForm = ({ onUpdateClick }) => {
     }
   };
 
-  const handleSubmit = (event) => {
+  const [errors, setErrors] = useState({});
+
+  const validateForm = () => {
+    let newErrors = {};
+
+    // Họ và tên
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = "Họ và tên không được để trống";
+    }
+
+    // Email
+    if (!formData.email.trim()) {
+      newErrors.email = "Email không được để trống";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Email không hợp lệ";
+    }
+
+    if (!formData.username.trim()) {
+      newErrors.username = "Tên người dùng không được sé trống";
+    }
+
+    // Ngày sinh
+    if (!formData.dob) {
+      newErrors.dob = "Ngày sinh không được để trống";
+    } else {
+      const dobDate = new Date(formData.dob);
+      const now = new Date();
+      const age = now.getFullYear() - dobDate.getFullYear();
+      if (dobDate > now) {
+        newErrors.dob = "Ngày sinh không thể ở tương lai";
+      } else if (age > 100) {
+        newErrors.dob = "Tuổi không hợp lệ";
+      }
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const prepareUpdateData = (formDataState) => {
+    const form = new FormData();
+
+    // Avatar
+    if (formDataState.avatar instanceof File) {
+      form.append("avatar", formDataState.avatar);
+    } else if (typeof formDataState.avatar === "string") {
+      form.append("avatar", formDataState.avatar); // giữ ảnh cũ
+    }
+
+    // Background image
+    if (formDataState.backgroundImage instanceof File) {
+      form.append("backgroundImage", formDataState.backgroundImage);
+    } else if (typeof formDataState.backgroundImage === "string") {
+      form.append("backgroundImage", formDataState.backgroundImage); // giữ ảnh cũ
+    }
+
+    // Các field text
+    const textFields = ["fullName", "email", "username", "dob"];
+
+    textFields.forEach((field) => {
+      if (formDataState[field] !== undefined && formDataState[field] !== null) {
+        form.append(field, formDataState[field]);
+      }
+    });
+
+    return form;
+  };
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (event) => {
+    setLoading(true);
     event.preventDefault();
-    console.log("Form data:", formData);
-    const user = UserService.updatepInfor(userId, formData);
+    if (!validateForm()) return;
+    const form = prepareUpdateData(formData);
+    const user = await UserService.updatepInfor(userId, form);
+    if (user?.success === false) {
+      notifications.show({
+        title: "Cập nhật thất bại",
+        message: user?.message,
+        color: "red",
+      });
+    } else {
+      notifications.show({
+        title: "Cập nhật thành công",
+        message: "Cập nhật trang cá nhân thành công",
+        color: "green",
+      });
+      const userData = user?.user;
+      const newUserData = {
+        avatar: userData.avatar,
+        fullName: userData.fullName,
+        id: userData.id,
+        role: userData.role,
+        username: userData.username,
+      };
+      localStorage.setItem("user", JSON.stringify(newUserData));
+    }
+    setLoading(false);
     onUpdateClick();
   };
 
@@ -425,6 +475,7 @@ const UpdateInfoForm = ({ onUpdateClick }) => {
               styles={{
                 input: { borderColor: "#4B5563", borderWidth: "2px" },
               }}
+              error={errors.fullName}
             />
           </Group>
           <div className="w-full pl-12 pr-6">
@@ -455,6 +506,7 @@ const UpdateInfoForm = ({ onUpdateClick }) => {
             </div>
             <Stack spacing="md">
               <TextInput
+                disabled
                 label="Đổi email/tài khoản:"
                 name="email"
                 value={formData.email}
@@ -462,6 +514,17 @@ const UpdateInfoForm = ({ onUpdateClick }) => {
                 styles={{
                   input: { borderColor: "#4B5563", borderWidth: "2px" },
                 }} // border-gray-700 border-2
+                error={errors.email}
+              />
+              <TextInput
+                label="Username:"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                styles={{
+                  input: { borderColor: "#4B5563", borderWidth: "2px" },
+                }} // border-gray-700 border-2
+                error={errors.username}
               />
               <TextInput
                 label="Năm sinh:"
@@ -472,69 +535,8 @@ const UpdateInfoForm = ({ onUpdateClick }) => {
                 styles={{
                   input: { borderColor: "#4B5563", borderWidth: "2px" },
                 }}
+                error={errors.dob}
               />
-              <TextInput
-                label="Giới tính:"
-                name="gender"
-                value={formData.gender}
-                onChange={handleChange}
-                styles={{
-                  input: { borderColor: "#4B5563", borderWidth: "2px" },
-                }}
-              />
-              <TextInput
-                label="Link Facebook:"
-                name="facebook"
-                value={formData.facebook}
-                onChange={handleChange}
-                styles={{
-                  input: { borderColor: "#4B5563", borderWidth: "2px" },
-                }}
-              />
-              <TextInput
-                label="Link Tiktok:"
-                name="tiktok"
-                value={formData.tiktok}
-                onChange={handleChange}
-                styles={{
-                  input: { borderColor: "#4B5563", borderWidth: "2px" },
-                }}
-              />
-              <TextInput
-                label="Link Blog:"
-                name="blog"
-                value={formData.blog}
-                onChange={handleChange}
-                styles={{
-                  input: { borderColor: "#4B5563", borderWidth: "2px" },
-                }}
-              />
-              {/* <PasswordInput
-                label="Mật khẩu hiện tại:"
-                name="nowPassword"
-                onChange={handleChange}
-                styles={{
-                  input: { borderColor: "#4B5563", borderWidth: "2px" },
-                }}
-              />
-              <PasswordInput
-                label="Mật khẩu mới:"
-                name="newPassword"
-                value={formData.newPassword}
-                onChange={handleChange}
-                styles={{
-                  input: { borderColor: "#4B5563", borderWidth: "2px" },
-                }}
-              />
-              <PasswordInput
-                label="Xác nhận mật khẩu mới:"
-                name="renewPassword"
-                value={formData.renewPassword}
-                onChange={handleChange}
-                styles={{
-                  input: { borderColor: "#4B5563", borderWidth: "2px" },
-                }}
-              /> */}
             </Stack>
           </div>
         </div>
@@ -555,10 +557,116 @@ const UpdateInfoForm = ({ onUpdateClick }) => {
             color="blue"
             radius="lg"
             className="font-bold px-8"
+            loading={loading}
+            disabled={loading}
           >
             Cập nhật
           </Button>
         </Group>
+      </Paper>
+    </div>
+  );
+};
+
+const ChangePassword = () => {
+  const userId = getUserId();
+  const { data: user } = useUser(userId);
+  const [loading, setLoading] = useState(false);
+
+  const form = useForm({
+    initialValues: {
+      email: user?.email || "",
+      password: "",
+      newPassword: "",
+      renewPassword: "",
+    },
+    validate: {
+      password: (value) =>
+        value.length === 0 ? "Bạn phải nhập mật khẩu hiện tại" : null,
+      newPassword: (value) =>
+        value.length < 6 ? "Mật khẩu mới phải từ 6 ký tự" : null,
+      renewPassword: (value, values) =>
+        value !== values.newPassword
+          ? "Xác nhận mật khẩu mới không khớp"
+          : null,
+    },
+  });
+
+  const handleChangePassword = async (values) => {
+    values.email = user?.email;
+    setLoading(true);
+    const isChange = await UserService.changePassword(userId, values);
+    form.reset();
+    if (isChange?.success) {
+      notifications.show({
+        title: "Thành công",
+        message: "Đổi mật khẩu thành công",
+        color: "green",
+      });
+      setLoading(false);
+      Navigate("/setting");
+    } else {
+      notifications.show({
+        title: "Thất bại",
+        message: isChange?.message,
+        color: "red",
+      });
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className=" shadow-[2px_2px_2px_2px_rgba(0,0,0,0.4)] rounded-[30px]">
+      <Paper
+        shadow="lg"
+        p="xl"
+        radius="xl"
+        className="w-full bg-gray-100 font-bold text-left pb-12"
+      >
+        <p className="text-3xl font-bold mb-4 text-center">Đổi mật khẩu</p>
+        <form onSubmit={form.onSubmit(handleChangePassword)}>
+          <Stack spacing="md">
+            <PasswordInput
+              withAsterisk
+              label="Mật khẩu hiện tại:"
+              name="password"
+              styles={{
+                input: { borderColor: "#4B5563", borderWidth: "2px" },
+              }}
+              key={form.key("password")}
+              {...form.getInputProps("password")}
+            />
+            <PasswordInput
+              label="Mật khẩu mới:"
+              name="newPassword"
+              styles={{
+                input: { borderColor: "#4B5563", borderWidth: "2px" },
+              }}
+              key={form.key("newPassword")}
+              {...form.getInputProps("newPassword")}
+            />
+            <PasswordInput
+              label="Xác nhận mật khẩu mới:"
+              name="renewPassword"
+              styles={{
+                input: { borderColor: "#4B5563", borderWidth: "2px" },
+              }}
+              key={form.key("renewPassword")}
+              {...form.getInputProps("renewPassword")}
+            />
+            <Group justify="center" mt="md">
+              <Button
+                type="submit"
+                size="lg"
+                color="blue"
+                loading={loading}
+                disabled={loading}
+              >
+                Xác nhận
+              </Button>
+            </Group>
+          </Stack>
+        </form>
       </Paper>
     </div>
   );
@@ -594,6 +702,11 @@ const SettingPage = () => {
       id: "payment",
       label: "Phương thức thanh toán",
       component: <PaymentMethods />,
+    },
+    {
+      id: "changePassword",
+      label: "Thay đổi mật khẩu",
+      component: <ChangePassword />,
     },
     // Note: updateInfo is not a primary menu item, it's shown via interaction
   ];

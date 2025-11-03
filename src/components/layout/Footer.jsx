@@ -1,3 +1,4 @@
+import { useMantineColorScheme } from "@mantine/core";
 import { Link } from "react-router-dom";
 
 const postStoryPath = "/writestory";
@@ -14,9 +15,11 @@ const Footer = () => {
     const footerBackgroundClass = 'bg-[linear-gradient(141.39deg,_rgba(220,220,220,0.5)_3.43%,_rgba(233,233,233,0.5)_86.18%)]';
     const footerShadowClass = 'shadow-[inset_0px_4px_13.5px_1px_rgba(0,0,0,0.25)]';
 
+    const { colorScheme } = useMantineColorScheme();
+
     return (
-        <footer className={`${footerBackgroundClass} ${footerShadowClass} mt-auto`}>
-            <div className="container md:block lg:flex italic font-extrabold leading-7 text-gray-900 w-3/4 mx-auto py-10">
+        <footer className={`${colorScheme === "dark" ? "bg-neutral-800" : footerBackgroundClass} ${footerShadowClass} mt-auto`}>
+            <div className="container md:block lg:flex italic font-extrabold leading-7 w-3/4 mx-auto py-10">
                 <div className="lg:w-full lg:mx-0 text-sm md:text-md lg:text-xl">
                     <div className="flex flex-col md:flex-row justify-between text-center">
 

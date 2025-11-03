@@ -1,15 +1,17 @@
 import { UserIcon, EyeIcon, EyeOffIcon } from "lucide-react";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom"; // Import useNavigate
+import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import AuthService from "../services/AuthService";
+import { Button, Card, Modal, Text, TextInput, Title } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
+import { notifications } from "@mantine/notifications";
 
-const backgroundImageUrl = "/images/background.jpg"; // Ensure this path is correct
+const backgroundImageUrl = "/images/background.jpg";
 const googleLogoUrl =
   "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png";
 
 const SignUpPage = () => {
-  // --- React Hook Form ---
   const {
     register,
     handleSubmit: handleRHFSubmit,
@@ -19,51 +21,42 @@ const SignUpPage = () => {
   } = useForm({
     mode: "onChange",
     defaultValues: {
-      fullName: "", // Changed 'name' to 'fullName'
+      fullName: "",
       email: "",
       username: "",
       password: "",
       confirmPassword: "",
-      sendNotification: false, // This field doesn't map directly to the model
+      sendNotification: false,
     },
   });
 
-  // --- State for UI and API results ---
-  const [apiError, setApiError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] =
     useState(false);
-  const navigate = useNavigate(); // Initialize useNavigate
+  const [OTP, setOTP] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [OTPError, setOTPError] = useState(null);
+  const navigate = useNavigate();
 
-  // Watch password value for confirmation validation
   const passwordValue = watch("password");
 
-  // --- Handle Submission with React Hook Form ---
-  const onSubmit = async (data) => {
-    setApiError(null);
-    setSuccessMessage(null);
-
-    // Data now directly matches model fields where applicable
-
-    try {
-      const dataOutput = await AuthService.signup(data);
-      
-      setSuccessMessage("Registration successful! Redirecting..."); // Updated success message
-      reset();
-
-      // Redirect after a short delay to show the success message
-      setTimeout(() => {
-        navigate('/');
-      }, 1500);
-
-    } catch (err) {
-      console.error("Registration error:", err);
-      setApiError(err?.response?.data?.message || "An error occurred during registration.");
+  const handleSignUp = async (data) => {
+    setIsLoading(true);
+    setEmail(data?.email);
+    const { data: dataOutput } = await AuthService.signup(data);
+    setIsLoading(false);
+    if (dataOutput?.success) {
+      open();
+    } else {
+      notifications.show({
+        color: "red",
+        title: "Lỗi đăng ký",
+        message: dataOutput?.message,
+      });
     }
   };
 
-  // --- Toggle Password Visibility ---
   const togglePasswordVisibility = () => {
     setIsPasswordVisible(!isPasswordVisible);
   };
@@ -72,13 +65,52 @@ const SignUpPage = () => {
     setIsConfirmPasswordVisible(!isConfirmPasswordVisible);
   };
 
-  // Helper to get input border classes based on error state
   const getInputClass = (fieldName) => {
     return `w-full h-12 px-4 pr-10 rounded-lg border-2 bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent ${
       errors[fieldName]
-        ? "border-red-500 ring-red-500" // Error state
-        : "border-gray-400 focus:ring-blue-500" // Default state
+        ? "border-red-500 ring-red-500"
+        : "border-gray-400 focus:ring-blue-500"
     }`;
+  };
+
+  const [opened, { open, close }] = useDisclosure(false);
+
+  const handleSignUpData = async (data) => {
+    const otp = OTP;
+    setOTP("");
+    if (!otp) {
+      setOTPError("Vui lòng nhập OTP");
+      return;
+    }
+    if (otp.length !== 6) {
+      setOTPError("OTP chỉ có 6 ký tự");
+      return;
+    }
+    setIsLoading(true);
+    const { data: verifyOTP } = await AuthService.verifyOTP(email, otp);
+    if (verifyOTP?.success) {
+      const { data: dataOutput } = await AuthService.signupData(data);
+      if (dataOutput?.success) {
+        setIsLoading(false);
+        reset();
+        close();
+        notifications.show({
+          color: "green",
+          title: "Đăng ký thành công",
+          message: "Đang chuyển hướng tới trang đăng nhập",
+        });
+        navigate("/login");
+      } else {
+        notifications.show({
+          color: "red",
+          title: "Lỗi khi đăng ký",
+          message: verifyOTP?.message,
+        });
+      }
+    } else {
+      setOTPError(verifyOTP?.message);
+    }
+    setIsLoading(false);
   };
 
   return (
@@ -107,43 +139,7 @@ const SignUpPage = () => {
           {/* Form Container */}
           <div className="flex absolute right-0 top-0 bottom-0 w-full md:w-[calc(80%-16rem)] h-full rounded-l-none md:rounded-l-[78px] backdrop-blur-lg justify-center items-center p-4 md:p-8 overflow-y-auto">
             <div className="w-full max-w-sm md:max-w-md">
-              {/* Error/Success Messages */}
-              {apiError && (
-                <div
-                  className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"
-                  role="alert"
-                >
-                  <strong className="font-bold">Error: </strong>
-                  <span className="block sm:inline">{apiError}</span>
-                  <button
-                    onClick={() => setApiError(null)}
-                    className="absolute top-0 bottom-0 right-0 px-4 py-3"
-                    aria-label="Close"
-                  >
-                     <svg className="fill-current h-6 w-6 text-red-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><title>Close</title><path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/></svg>
-                  </button>
-                </div>
-              )}
-              {successMessage && (
-                <div
-                  className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4"
-                  role="alert"
-                >
-                  <strong className="font-bold">Success: </strong>
-                  <span className="block sm:inline">{successMessage}</span>
-                   <button
-                    onClick={() => setSuccessMessage(null)} // Allow closing success message manually too
-                    className="absolute top-0 bottom-0 right-0 px-4 py-3"
-                    aria-label="Close"
-                  >
-                     <svg className="fill-current h-6 w-6 text-green-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><title>Close</title><path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/></svg>
-                  </button>
-                </div>
-              )}
-
-              {/* Registration Form */}
-              <form onSubmit={handleRHFSubmit(onSubmit)} className="w-full">
-                {/* Welcome Text */}
+              <form onSubmit={handleRHFSubmit(handleSignUp)} className="w-full">
                 <div className="mb-3 text-center">
                   <h2 className="text-2xl text-white py-2">
                     Chào mừng
@@ -154,15 +150,14 @@ const SignUpPage = () => {
                   </p>
                 </div>
 
-                {/* --- Full Name Input --- */}
                 <div className="relative mb-1 mt-4">
                   <input
-                    id="fullName" // Match id to field name
+                    id="fullName"
                     type="text"
-                    placeholder="Full Name" // User-friendly placeholder
-                    className={getInputClass("fullName")} // Use fullName for styling
+                    placeholder="Full Name"
+                    className={getInputClass("fullName")}
                     aria-invalid={errors.fullName ? "true" : "false"}
-                    {...register("fullName", { // Register fullName
+                    {...register("fullName", {
                       required: "Full Name is required",
                     })}
                   />
@@ -170,13 +165,12 @@ const SignUpPage = () => {
                     <UserIcon className="w-5 h-5" />
                   </span>
                 </div>
-                {errors.fullName && ( // Check errors.fullName
+                {errors.fullName && (
                   <p className="text-red-500 text-xs mt-1 mb-2 text-left">
                     {errors.fullName.message}
                   </p>
                 )}
 
-                {/* --- Email Input --- */}
                 <div className="relative mb-1 mt-4">
                   <input
                     id="email"
@@ -202,7 +196,6 @@ const SignUpPage = () => {
                   </p>
                 )}
 
-                {/* --- UserName Input --- */}
                 <div className="relative mb-1 mt-4">
                   <input
                     id="username"
@@ -224,7 +217,6 @@ const SignUpPage = () => {
                   </p>
                 )}
 
-                {/* --- Password Input --- */}
                 <div className="relative mb-1 mt-4">
                   <input
                     id="password"
@@ -244,7 +236,9 @@ const SignUpPage = () => {
                     type="button"
                     onClick={togglePasswordVisibility}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 cursor-pointer"
-                    aria-label={isPasswordVisible ? "Hide password" : "Show password"}
+                    aria-label={
+                      isPasswordVisible ? "Hide password" : "Show password"
+                    }
                   >
                     {isPasswordVisible ? (
                       <EyeOffIcon className="h-5 w-5" />
@@ -259,7 +253,6 @@ const SignUpPage = () => {
                   </p>
                 )}
 
-                {/* --- Confirm Password Input --- */}
                 <div className="relative mb-1 mt-4">
                   <input
                     id="confirmPassword"
@@ -277,7 +270,11 @@ const SignUpPage = () => {
                     type="button"
                     onClick={toggleConfirmPasswordVisibility}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 cursor-pointer"
-                    aria-label={isConfirmPasswordVisible ? "Hide confirmation password" : "Show confirmation password"}
+                    aria-label={
+                      isConfirmPasswordVisible
+                        ? "Hide confirmation password"
+                        : "Show confirmation password"
+                    }
                   >
                     {isConfirmPasswordVisible ? (
                       <EyeOffIcon className="h-5 w-5" />
@@ -292,7 +289,6 @@ const SignUpPage = () => {
                   </p>
                 )}
 
-                {/* Checkbox (sendNotification - handle this logic on backend if needed) */}
                 <div className="flex justify-start items-center my-4 text-sm">
                   <label className="flex items-center text-gray-200 cursor-pointer">
                     <input
@@ -305,29 +301,26 @@ const SignUpPage = () => {
                   </label>
                 </div>
 
-                {/* Sign Up Button */}
-                <button
+                <Button
+                  size="md"
+                  fullWidth
+                  loading={isLoading}
                   type="submit"
-                  disabled={isSubmitting}
-                  className={`w-full h-12 rounded-lg border-solid border-gray-700 border-2 my-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold flex items-center justify-center transition duration-150 ease-in-out ${
-                    isSubmitting ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
+                  disabled={isLoading}
+                  className={
+                    "my-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold"
+                  }
                 >
-                  {isSubmitting ? (
-                     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                     </svg>
-                  ) : (
-                    "Sign up"
-                  )}
-                </button>
+                  Sign Up
+                </Button>
 
                 {/* Google Sign Up Button */}
                 <button
                   type="button"
-                  disabled={isSubmitting} // Optionally disable during form submission
-                  className={`w-full h-12 rounded-lg border-solid border-gray-400 border-2 my-3 bg-gray-100 hover:bg-gray-200 text-gray-800 flex items-center justify-center transition duration-150 ease-in-out ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
+                  disabled={isSubmitting}
+                  className={`w-full h-12 rounded-lg border-solid border-gray-400 border-2 my-3 bg-gray-100 hover:bg-gray-200 text-gray-800 flex items-center justify-center transition duration-150 ease-in-out ${
+                    isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                 >
                   <img
                     src={googleLogoUrl}
@@ -337,7 +330,6 @@ const SignUpPage = () => {
                   <span className="pl-3 font-medium">Sign up with Google</span>
                 </button>
 
-                {/* Bottom Links */}
                 <div className="text-center mt-4 text-sm">
                   <p className="text-gray-300 py-1">
                     Already have an account?
@@ -363,6 +355,53 @@ const SignUpPage = () => {
           </div>
         </div>
       </div>
+      <Modal
+        opened={opened}
+        onClose={() => {}}
+        centered
+        closeOnClickOutside={false}
+        closeOnEscape={false}
+        withCloseButton={false}
+      >
+        <Card shadow="md" padding="lg" className="w-full max-w-md">
+          <Title order={3} mb="md">
+            Nhập mã OTP
+          </Title>
+          <Text>
+            Hãy kiểm tra thư mục spam trong email của bạn nếu không thấy thông
+            báo.
+          </Text>
+          <TextInput
+            label="Mã OTP"
+            placeholder="123456"
+            value={OTP}
+            onChange={(e) => {
+              setOTP(e.target.value);
+            }}
+            maxLength={6}
+          />
+          <p className="text-red-500 text-xs">{OTPError}</p>
+          <Button
+            loading={isLoading}
+            disabled={isLoading}
+            onClick={handleRHFSubmit(handleSignUpData)}
+            className="mt-4"
+          >
+            Kiểm tra
+          </Button>
+          <Button
+            onClick={() => {
+              setOTPError("");
+              close();
+            }}
+            disabled={isLoading}
+            variant="light"
+            className="mt-4"
+          >
+            Quay lại
+          </Button>
+        </Card>
+      </Modal>
     </div>
   );
 };

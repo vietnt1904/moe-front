@@ -1,9 +1,8 @@
-import { Badge } from "@mantine/core";
 import PropTypes from "prop-types";
 import { useNavigate } from "react-router-dom";
 import { slugify } from "../utils";
 
-const StoryCard = ({ story, title = true, status = true }) => {
+const StoryCard = ({ story, title = true}) => {
   StoryCard.propTypes = {
     story: PropTypes.object.isRequired,
     title: PropTypes.bool,
@@ -34,7 +33,7 @@ const StoryCard = ({ story, title = true, status = true }) => {
           />
         </div>
 
-        {status && (
+        {/* {status && (
           <div className="absolute top-0 left-0 m-2 space-y-1 z-10">
             {story?.trangthai && (
               <Badge color="green" size="sm">
@@ -48,7 +47,7 @@ const StoryCard = ({ story, title = true, status = true }) => {
               New
             </Badge>
           </div>
-        )}
+        )} */}
         {title && <div
           className="absolute bottom-0 w-full h-12 p-2 bg-gray-800 bg-opacity-50"
         >

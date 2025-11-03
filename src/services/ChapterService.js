@@ -18,6 +18,13 @@ const ChapterService = {
       .then(({ data }) => data?.data);
     return chapter;
   },
+  
+  async getChapterByAuthor(id, slug) {
+    const chapter = await instance
+      .get(`/chapter/author/${slug}-${id}`)
+      .then(({ data }) => data?.data);
+    return chapter;
+  },
 
   async getPreviousChapter(id, storyId, chapterNumber) {
     const chapter = await instance

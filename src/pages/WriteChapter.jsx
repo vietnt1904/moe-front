@@ -1,9 +1,19 @@
 import { useState, useEffect } from "react";
-import { TextInput, Button, Text, Group, Textarea } from "@mantine/core";
+import {
+  TextInput,
+  Button,
+  Text,
+  Group,
+  Textarea,
+  useMantineColorScheme,
+} from "@mantine/core";
 import { useForm } from "@mantine/form"; // Import useForm
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import ChapterService from "../services/ChapterService";
 import { notifications } from "@mantine/notifications";
+import { useQueryClient } from "@tanstack/react-query";
+import { getIdTitleFromUrl, getUserId } from "../utils";
+import { useStoryByIdOfAuthor } from "../hooks/useAuthor";
 
 const WriteChapter = () => {
   const [searchParams] = useSearchParams();
@@ -11,7 +21,15 @@ const WriteChapter = () => {
   // --- Constants ---
   const MAX_WORDS = 3000;
   const [wordCount, setWordCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const { title: url } = useParams();
+  const { id, slug } = getIdTitleFromUrl(url || "");
+  const {
+    data: story,
+  } = useStoryByIdOfAuthor(id, slug);
 
   // --- Form Management with useForm ---
   const form = useForm({
@@ -27,8 +45,8 @@ const WriteChapter = () => {
       chapterNumber: (value) => {
         if (!value || value.trim() === "")
           return "Chương số không được để trống";
+        if (isNaN(value)) return "Chương số phải là số thập phân hợp lệ";
         const num = parseFloat(value);
-        if (isNaN(num)) return "Chương số phải là số thập phân hợp lệ";
         if (num < 0) return "Chương số phải lớn hơn hoặc bằng 0";
         return null;
       },
@@ -68,11 +86,25 @@ const WriteChapter = () => {
     }
   };
 
+  if (story?.authorId != getUserId()) {
+    navigate("/", { replace: true });
+  }
+
   // Submission Handler
-  const handleFormSubmit = async (values, action) => {
+  const handleFormSubmit = async (values) => {
     // No need for event.preventDefault(), useForm's onSubmit handles it
+    setIsLoading(true);
     await ChapterService.writeChapter(values)
-      .then(() => {
+      .then((data) => {
+        if (data?.success === false) {
+          notifications.show({
+            title: "Lỗi thêm chương",
+            message: data?.message,
+            color: "red",
+          });
+          return;
+        }
+
         notifications.show({
           title: "Thêm chương mới thành công",
           message: "Chương mới đã được thêm thành công",
@@ -87,12 +119,25 @@ const WriteChapter = () => {
           color: "red",
         });
         console.log("Error:", error);
+      })
+      .finally(() => {
+        form.reset();
+        queryClient.invalidateQueries(["chapters", storyId]);
       });
+    setIsLoading(false);
   };
+
+  const { colorScheme } = useMantineColorScheme();
 
   // --- Render ---
   return (
-    <div className="flex justify-center w-full px-[12.5%] mx-auto gap-4 min-h-screen pt-12 bg-[linear-gradient(90deg,_#037770_3.43%,_#FFC7C7_86.18%)]">
+    <div
+      className={`flex justify-center w-full px-[12.5%] mx-auto gap-4 min-h-screen pt-12 ${
+        colorScheme === "dark"
+          ? ""
+          : "bg-[linear-gradient(90deg,_#037770_3.43%,_#FFC7C7_86.18%)]"
+      }`}
+    >
       <div className="w-full lg:w-3/4 md:mr-28 lg:mr-48 mx-auto">
         <div className="pt-4 pb-8 mb-24 rounded-xl w-full font-bold text-left">
           <div className="pb-6">
@@ -151,7 +196,7 @@ const WriteChapter = () => {
             </Text>
 
             <Group position="center" className="pt-4">
-              <Button
+              {/* <Button
                 type="button"
                 onClick={() => {
                   const validationResult = form.validate();
@@ -165,19 +210,19 @@ const WriteChapter = () => {
                 size="xl"
               >
                 Cài đặt khóa chương
-              </Button>
+              </Button> */}
               <Button
                 type="button"
+                loading={isLoading}
+                disabled={isLoading}
                 onClick={() => {
                   // Trigger validation before submitting
                   const validationResult = form.validate();
                   if (!validationResult.hasErrors) {
                     handleFormSubmit(form.values, "save");
-                  } else {
-                    console.log("Validation Errors:", validationResult.errors);
                   }
                 }}
-                className="text-white text-xl font-bold px-6 py-2 mx-2 w-full sm:w-auto rounded bg-blue-500 hover:bg-blue-600"
+                className="text-white text-xl font-bold px-6 py-2 mx-auto w-full sm:w-auto rounded bg-blue-500 hover:bg-blue-600"
                 size="xl"
               >
                 Lưu chương

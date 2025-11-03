@@ -20,6 +20,13 @@ const StoryService = {
     return story;
   },
 
+  async buyStory(id) {
+    const story = await instance
+      .get(`/story/buy/${id}`)
+      .then(({ data }) => data?.data);
+    return story;
+  },
+
   async getStoriesSameAuthor(id) {
     const stories = await instance
       .get(`/story/author/${id}`)
@@ -93,6 +100,20 @@ const StoryService = {
   async getProposalStories() {
     const stories = await instance
       .get(`/story/proposal`)
+      .then(({ data }) => data?.data);
+    return stories;
+  },
+
+  async getStoryFollowers(id) {
+    const followers = await instance
+      .get(`/story/followers/${id}`)
+      .then(({ data }) => data?.data || 0);
+    return followers;
+  },
+
+  async getTop10Stories() {
+    const stories = await instance
+      .get(`/story/ranking`)
       .then(({ data }) => data?.data);
     return stories;
   },

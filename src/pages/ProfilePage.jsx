@@ -12,32 +12,57 @@ import {
   SimpleGrid,
   Center,
   rem,
-  Button, // For pixel-perfect sizing if needed
+  Button,
+  Modal, // For pixel-perfect sizing if needed
 } from "@mantine/core";
-import { PencilLine } from "lucide-react";
 import { WandSparkles } from "lucide-react";
-import { useStoriesByUser } from "../hooks/useStory";
 import StoryCard from "../components/StoryCard";
-import { Link, useSearchParams } from "react-router-dom";
-import { slugify } from "../utils";
-import { useUser } from "../hooks/useUser";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { getUserId, slugify } from "../utils";
+import { useUser, useUserSubscribeStories } from "../hooks/useUser";
+import { useAuthorStories, useFollowersOfAuthor } from "../hooks/useAuthor";
+import { useDisclosure } from "@mantine/hooks";
 
 const ProfilePage = () => {
   const [searchParams] = useSearchParams();
   const tab = searchParams.get("tab");
   const [activeTab, setActiveTab] = useState(tab || "following"); // 'following' or 'myStories'
-  const checkUser = localStorage.getItem("user");
-  let userInfor = null;
-  if (checkUser) {
-    userInfor = JSON.parse(checkUser);
+  const userId = getUserId();
+  const navigate = useNavigate();
+  if (!userId) {
+    navigate("/");
   }
-  const { data: myStories } = useStoriesByUser(userInfor?.id);
-  const followedStories = [];
-  const {data: user} = useUser(userInfor?.id);
+  const { data: myStories } = useAuthorStories(userId);
+  const { data: user } = useUser(userId);
+  const { data: unFilterSubscribeStories } = useUserSubscribeStories(userId);
+
+  const filterUniqueStories = (stories) => {
+    if (!stories || !Array.isArray(stories)) return [];
+
+    const seenIds = new Set();
+    const uniqueStories = stories.filter((story) => {
+      if (!seenIds.has(story.storyId)) {
+        seenIds.add(story.storyId);
+        return true;
+      }
+      return false;
+    });
+
+    return uniqueStories;
+  };
+
+  const subscribeStories = filterUniqueStories(unFilterSubscribeStories);
+
+  const { data: followers } = useFollowersOfAuthor(userId);
 
   const handleTabClick = (tabName) => {
     setActiveTab(tabName);
   };
+
+  const [followersOpened, { open: followersOpen, close: followersClose }] =
+    useDisclosure(false);
+  const [followOpened, { open: followOpen, close: followClose }] =
+    useDisclosure(false);
 
   // Define styles for active/inactive tabs reusing original CSS logic
   const getTabClassName = (tabName) => {
@@ -64,7 +89,10 @@ const ProfilePage = () => {
           className="relative mt-24 w-full overflow-hidden rounded-3xl h-auto max-h-[32em] shadow-lg"
         >
           <Image
-            src={user?.backgroundImage || "https://hoanghamobile.com/tin-tuc/wp-content/uploads/2024/05/tai-anh-dep-ve-may-23.jpg"}
+            src={
+              user?.backgroundImage ||
+              "https://hoanghamobile.com/tin-tuc/wp-content/uploads/2024/05/tai-anh-dep-ve-may-23.jpg"
+            }
             alt="Ảnh nền"
             className={`w-full h-full object-fill shadow-lg object-center ${
               isEditAnhNen ? "opacity-60" : ""
@@ -81,10 +109,13 @@ const ProfilePage = () => {
           </Center>
         </Box>
         <Box
-          className="absolute lg:bottom-[3rem] translate-y-[-50%] left-4 md:left-8 lg:left-16 w-24 h-24 md:w-32 md:h-32 lg:w-48 lg:h-48" // Approximate calculation for overlap
+          className="absolute lg:bottom-[5%] sm:translate-y-[-50%] lg:translate-y-[0] left-4 md:left-8 lg:left-16 w-24 h-24 md:w-32 md:h-32 lg:w-48 lg:h-48" // Approximate calculation for overlap
         >
           <Avatar
-            src={user?.avatar || "https://hoanghamobile.com/tin-tuc/wp-content/uploads/2024/05/tai-anh-dep-ve-may-23.jpg"}
+            src={
+              user?.avatar ||
+              "https://hoanghamobile.com/tin-tuc/wp-content/uploads/2024/05/tai-anh-dep-ve-may-23.jpg"
+            }
             alt="Ảnh đại diện"
             radius="50%"
             size="100%"
@@ -96,44 +127,12 @@ const ProfilePage = () => {
           <Box className="pl-32 md:pl-44 lg:pl-72 text-black text-2xl font-bold mt-3 pr-6 md:pr-8 lg:pr-12 w-full">
             <Group align="flex-end" gap={2} mb="xs">
               <p className="font-bold text-lg md:text-2xl">{user?.fullName}</p>
-              <span className="flex text-xs lg:text-sm mx-2">
-                Đang theo dõi
-              </span>
-              <button>
-                <PencilLine color="black" className="w-5 h-auto md:w-6 mx-2" />
-              </button>
-              <button className="text-white bg-black rounded-3xl text-xs md:text-sm px-2 py-0 font-semibold">
-                Nhắn tin
-              </button>
             </Group>
-
             <Group gap="xs" align="center" mb="xs">
               <Text size="lg" fw={500} className="max-w-[100%] overflow-hidden">
                 {user?.email}
               </Text>
-              <Image
-                onClick={() =>
-                  window.open("https://www.facebook.com/", "_blank")
-                }
-                src="/images/facebook.png"
-                className="w-6 h-6 hover:cursor-pointer"
-                alt="Facebook"
-              />
-              <Image
-                src="/images/x.png"
-                className="w-5 h-5 hover:cursor-pointer"
-                alt="X"
-              />
             </Group>
-
-            <Box className="hidden md:block max-h-20 overflow-hidden mb-xs">
-              <Text size="lg" lineClamp={3}>
-                <Text component="span" fw={500}>
-                  Giới thiệu:{" "}
-                </Text>
-                {user?.description}
-              </Text>
-            </Box>
 
             {/* Stats */}
             <Stack gap={rem(4)} className="text-sm font-normal mt-3">
@@ -143,12 +142,52 @@ const ProfilePage = () => {
                 </Text>
               )}
               <Group gap="md">
-                <Text>
-                  <strong>{user?.followers || 0}</strong> Người theo dõi
+                <Text className="cursor-pointer" onClick={followersOpen}>
+                  <strong>{followers?.followers?.length || 0}</strong> Người
+                  theo dõi
                 </Text>
-                <Text>
-                  Đang theo dõi <strong>{user?.following || 0}</strong> người dùng
+                <Modal
+                  opened={followersOpened}
+                  onClose={followersClose}
+                  title={
+                    <p className="font-semibold text-xl">
+                      Những người đang theo dõi bạn
+                    </p>
+                  }
+                >
+                  {followers?.followers?.length > 0 ? (
+                    <div>
+                      {followers?.followers?.map((item) => {
+                        <div key={item.id}>1</div>;
+                      })}
+                    </div>
+                  ) : (
+                    <p>Không có người dùng nào đang theo dõi bạn</p>
+                  )}
+                </Modal>
+                <Text className="cursor-pointer" onClick={followOpen}>
+                  Đang theo dõi{" "}
+                  <strong>{followers?.follow?.length || 0}</strong> người dùng
                 </Text>
+                <Modal
+                  opened={followOpened}
+                  onClose={followClose}
+                  title={
+                    <p className="font-semibold text-xl">
+                      Những người mà bạn đang theo dõi
+                    </p>
+                  }
+                >
+                  {followers?.follow?.length > 0 ? (
+                    <div>
+                      {followers?.follow?.map((item) => {
+                        <div key={item.id}>123</div>;
+                      })}
+                    </div>
+                  ) : (
+                    <p>Bạn chưa theo dõi người dùng nào</p>
+                  )}
+                </Modal>
               </Group>
             </Stack>
           </Box>
@@ -178,17 +217,17 @@ const ProfilePage = () => {
         <Box className="flex flex-col items-center mt-8 mb-24">
           {activeTab === "following" && (
             <Box id="following-content" className="container w-3/4 mt-12 mb-32">
-              {followedStories?.length > 0 ? (
+              {subscribeStories?.length > 0 ? (
                 <SimpleGrid
                   cols={{ base: 2, xs: 3, sm: 4 }} // Responsive columns
                   spacing={{ base: "md", lg: "xl" }} // Responsive spacing
                 >
-                  {followedStories?.map((story) => (
+                  {subscribeStories?.map((story) => (
                     <StoryCard
                       key={story.id}
-                      story={story}
-                      title={false}
-                      status={false}
+                      story={story?.Story}
+                      title={true}
+                      status={true}
                     />
                   ))}
                 </SimpleGrid>
@@ -236,9 +275,7 @@ const ProfilePage = () => {
                         }`}
                         className="flex justify-end mt-2"
                       >
-                        <Button>
-                          Xem chi tiết
-                        </Button>
+                        <Button>Xem chi tiết</Button>
                       </Link>
                     </div>
                   ))}

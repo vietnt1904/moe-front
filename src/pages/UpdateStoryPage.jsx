@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Container,
   Box,
@@ -38,14 +38,20 @@ import {
 } from "@tabler/icons-react";
 import { MessageSquareMore, Eye } from "lucide-react"; // Used in chapter list
 import { Link, useParams, useNavigate, Navigate } from "react-router-dom";
-import { formatDate, getIdTitleFromUrl, slugify } from "../utils"; // Assuming utils exist
+import {
+  convertNumber,
+  formatDate,
+  getIdTitleFromUrl,
+  getUserId,
+  slugify,
+} from "../utils"; // Assuming utils exist
 import { useChaptersByStoryId } from "../hooks/useChapter"; // Assuming custom hook exists
 import { useTopic } from "../hooks/useTopic"; // Assuming custom hook exists
 import { useGenre } from "../hooks/useGenre"; // Assuming custom hook exists
-import { useStory } from "../hooks/useStory"; // Assuming custom hook exists
 import StoryService from "../services/StoryService"; // Assuming service exists
 import { IconPlus } from "@tabler/icons-react";
 import { useForm } from "@mantine/form";
+import { useStoryByIdOfAuthor } from "../hooks/useAuthor";
 
 // --- Static Data ---
 const phanLoaiOptions = [
@@ -68,7 +74,6 @@ const ketTruyenOptions = [
   { value: "SE", label: "SE" },
 ];
 
-
 const defaultBannerImage = "/images/anh_bia_mac_dinh.png"; // Provide a path to your default image
 
 // --- Main Component ---
@@ -82,9 +87,10 @@ const UpdateStoryPage = () => {
     data: story,
     error: storyError,
     isLoading: storyLoading,
-  } = useStory(storyId, slug);
+  } = useStoryByIdOfAuthor(storyId, slug);
   const { data: chapters, isLoading: chaptersLoading } =
     useChaptersByStoryId(storyId); // Optional: for chapter list display
+
   const { data: topics, isLoading: topicsLoading } = useTopic();
   const { data: genres, isLoading: genresLoading } = useGenre();
 
@@ -96,6 +102,10 @@ const UpdateStoryPage = () => {
     useState(defaultBannerImage);
   const [currentImageFile, setCurrentImageFile] = useState(null); // Holds the selected File object
   const [isEdit, setIsEdit] = useState(false);
+
+  if (story?.authorId != getUserId()) {
+    navigate("/", { replace: true });
+  }
 
   // --- Map Options ---
   const topicOptions =
@@ -182,12 +192,6 @@ const UpdateStoryPage = () => {
     // handle it during submission preparation.
   };
 
-  const removeImage = () => {
-    setCurrentImageFile(null);
-    form.setFieldValue("image", null); // Signal removal in form state
-    setCoverImagePreview(defaultBannerImage);
-  };
-
   const handleScheduleChange = (newSchedule) => {
     const isSelectingKhongCoDinh =
       newSchedule.includes("không cố định") &&
@@ -210,7 +214,6 @@ const UpdateStoryPage = () => {
   };
 
   const handleFormSubmit = async (values) => {
-
     if (!storyId) {
       notifications.show({
         title: "Lỗi",
@@ -237,7 +240,7 @@ const UpdateStoryPage = () => {
             dataToSend.append(key + "[]", Number(item))
           );
         } else {
-          values[key].forEach((item) => dataToSend.append(key + "[]", item));
+          dataToSend.append(key, JSON.stringify(values[key]));
         }
       }
       // --- End Update ---
@@ -340,7 +343,6 @@ const UpdateStoryPage = () => {
   if (!story) {
     return <Navigate to="/404" replace />; // Or a dedicated "Not Found" page
   }
-
 
   // --- Render Component ---
   return (
@@ -551,7 +553,9 @@ const UpdateStoryPage = () => {
                   <Text span fw={500} tt="capitalize">
                     {story?.releaseSchedule == null
                       ? "Chưa rõ"
-                      : JSON.parse(story?.releaseSchedule)?.join(", ").replace(/_/g, " ")}
+                      : JSON.parse(story?.releaseSchedule)
+                          ?.join(", ")
+                          .replace(/_/g, " ")}
                   </Text>
                 </Text>
               </Stack>
@@ -788,12 +792,12 @@ const UpdateStoryPage = () => {
             <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 md:gap-4 lg:gap-6">
               {[
                 { label: "Thứ 2", value: "Thứ 2" },
-                  { label: "Thứ 3", value: "Thứ 3" },
-                  { label: "Thứ 4", value: "Thứ 4" },
-                  { label: "Thứ 5", value: "Thứ 5" },
-                  { label: "Thứ 6", value: "Thứ 6" },
-                  { label: "Thứ 7", value: "Thứ 7" },
-                  { label: "Chủ nhật", value: "Chủ nhật" },
+                { label: "Thứ 3", value: "Thứ 3" },
+                { label: "Thứ 4", value: "Thứ 4" },
+                { label: "Thứ 5", value: "Thứ 5" },
+                { label: "Thứ 6", value: "Thứ 6" },
+                { label: "Thứ 7", value: "Thứ 7" },
+                { label: "Chủ nhật", value: "Chủ nhật" },
               ].map((day) => (
                 <Checkbox
                   key={day.value}
@@ -934,7 +938,7 @@ const UpdateStoryPage = () => {
           labelPosition="center"
         />
         <div className="flex justify-end mx-[20%]">
-          <Link to={`/story/author/${slug}/writechapter?storyId=${story.id}`}>
+          <Link to={`/story/author/${slug}-${storyId}/writechapter?storyId=${story.id}`}>
             <Button bg={"blue.6"} size={"md"} mb={"md"}>
               Thêm chương mới
               <IconPlus className="ml-2" size="1rem" />
@@ -949,11 +953,7 @@ const UpdateStoryPage = () => {
                 {visibleChaptersData.map((chapter) => (
                   // Adjust link as per your chapter routing structure
                   <Link
-                    to={`/stories/${storyId}/${slug}/chapters/${
-                      chapter.id
-                    }-${slugify(
-                      chapter.title || `chuong-${chapter.chapterNumber}`
-                    )}`}
+                    to={`/chapter/author/${slugify(story.title)}-${storyId}/${slugify(chapter.title)}-${chapter.id}`}
                     key={chapter.id}
                     style={{ textDecoration: "none" }}
                   >
@@ -965,7 +965,7 @@ const UpdateStoryPage = () => {
                     >
                       <Group justify="space-between">
                         <Text fw={500} size="sm" truncate="end" maw="70%">
-                          {`Chương ${chapter?.chapterNumber}${
+                          {`Chương ${convertNumber(chapter?.chapterNumber)}${
                             chapter?.title ? `: ${chapter?.title}` : ""
                           }`}
                         </Text>

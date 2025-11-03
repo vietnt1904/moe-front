@@ -7,14 +7,11 @@ import {
   Menu,
   Center,
   UnstyledButton,
-  Breadcrumbs,
   Notification,
-  CopyButton,
-  Tooltip,
-  Button,
   Modal,
   NumberInput,
-  useMantineColorScheme, // For error display
+  useMantineColorScheme,
+  Breadcrumbs, // For error display
 } from "@mantine/core";
 import {
   IconChevronLeft,
@@ -24,22 +21,16 @@ import {
   IconX,
 } from "@tabler/icons-react"; // Using Tabler Icons bundled with Mantine
 import {
-  useChapter,
+  useChapterByAuthor,
   useChaptersByStoryId,
   useNextChapter,
   usePreviousChapter,
 } from "../hooks/useChapter";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { convertNumber, debounce, getIdTitleFromUrl, getUserId, slugify } from "../utils";
-import { useStory } from "../hooks/useStory";
-import { IconCheck } from "@tabler/icons-react";
-import { IconCopy } from "@tabler/icons-react";
+import { convertNumber, getIdTitleFromUrl, getUserId, slugify } from "../utils";
 import { useDisclosure } from "@mantine/hooks";
 import parse from "html-react-parser";
-import { useEffect } from "react";
-import { IconBookmark } from "@tabler/icons-react";
-import UserService from "../services/UserService";
-import { useUserPaidStory } from "../hooks/useUser";
+import { useStoryByIdOfAuthor } from "../hooks/useAuthor";
 
 // Helper function to format content (JS equivalent of the PHP logic)
 const formatContent = (content) => {
@@ -57,42 +48,17 @@ const formatContent = (content) => {
 
 // --- React Component ---
 
-const ChapterPage = () => {
-  const MAX_CHAPTER_CAN_VIEW = 4;
+const AuthorChapterPage = () => {
+  const { story: storyTitle, chapter: title } = useParams();
 
-  const { title, chapter: chapterTitle } = useParams();
+  const { id: chapterId, slug: chapterSlug } = getIdTitleFromUrl(title); // id of chapter
+  const { id: storyId, slug: storySlug } = getIdTitleFromUrl(storyTitle);
 
-  const { id: storyId, slug: titleSlug } = getIdTitleFromUrl(title); // id của story
-  const { data: story } = useStory(storyId, titleSlug);
+  const {data: story} = useStoryByIdOfAuthor(storyId, storySlug);  
 
-  const { id: chapterId, slug: chapterSlug } = getIdTitleFromUrl(chapterTitle);
-  const navigate = useNavigate();
-  if (!storyId || !titleSlug || !chapterId) {
-    navigate("/");
-  }
-  const { data: chapter, error } = useChapter(chapterId, chapterSlug);
-
+  const { data: chapter, error } = useChapterByAuthor(chapterId, chapterSlug);
   const { data: chapters } = useChaptersByStoryId(storyId);
 
-  const [opened, { close, open }] = useDisclosure(false);
-
-  const listFontFamily = [
-    "font-sans", //"Arial, sans-serif",
-    "font-serif", //"Times New Roman, serif",
-    "font-mono", // "Courier New, monospace",
-  ];
-
-  // const [isBookmarked, setIsBookmarked] = useState(false); // Local state for bookmark toggle
-  const [showError, setShowError] = useState(false); // Control error visibility
-  const [fontSize, setFontSize] = useState(
-    localStorage.getItem("fontSize") || 15
-  );
-  const [lineHeight, setLineHeight] = useState(
-    localStorage.getItem("lineHeight") || 1.5
-  );
-  const [fontFamily, setFontFamily] = useState(
-    localStorage.getItem("fontFamily") || "font-sans"
-  );
   const { data: previousChapter } = usePreviousChapter(
     chapterId,
     storyId,
@@ -105,80 +71,41 @@ const ChapterPage = () => {
     chapter?.chapterNumber
   );
 
-  const userId = getUserId();
+  const navigate = useNavigate();
 
-  const { data: isPaid } = useUserPaidStory(userId, storyId);
+  if (story?.authorId != getUserId()) {
+    navigate("/", { replace: true });
+  }
 
-  useEffect(() => {
-    const saved = localStorage.getItem(`bookmark${storyId}`);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      setBookMark(parsed);
-      if (parsed.chapterId === chapterId) {
-        window.scrollTo(0, parsed.position);
-      }
-    }
-    // add to localstorage
-    const history = JSON.parse(localStorage.getItem("history") || "[]");
-    if (
-      !history?.some((h) => h.storyId === storyId && h.chapterId === chapterId)
-    ) {
-      const newHistory = [
-        ...history,
-        { storyId: storyId, chapterId: chapterId },
-      ];
-      localStorage.setItem("history", JSON.stringify(newHistory));
-    }
-  }, [storyId, chapterId]);
+  const [opened, { close, open }] = useDisclosure(false);
 
-  useEffect(() => {
-    const userId = getUserId();
-    if (!userId) return;
-    UserService.addHistory(userId, {
-      userId: userId,
-      storyId: storyId,
-      lastChapter: chapterId,
-    });
-  }, [storyId, chapterId]);
-
-  const [bookmark, setBookMark] = useState(null);
-  const saveBookMark = () => {
-    const scrollPosition = window.scrollY;
-
-    const data = {
-      chapter: chapterId,
-      position: scrollPosition,
-    };
-    localStorage.setItem(`bookmark${storyId}`, JSON.stringify(data));
-    setBookMark(data);
-  };
-
-  const debouncedSave = debounce(saveBookMark, 500);
-
-  useEffect(() => {
-    window.addEventListener("scroll", debouncedSave);
-    return () => window.removeEventListener("scroll", debouncedSave);
-  }, [chapterId, debouncedSave]);
-
-  // sẽ có thêm 1 button có inclick = {() => window.scrollTo(0, bookmark.position)}
   const { colorScheme } = useMantineColorScheme();
 
   const formattedContent = formatContent(chapter?.content);
 
-  const handleBuyStory = () => {
-    navigate(`/story/buy/${story?.id}`);
-  };
+  // const [isBookmarked, setIsBookmarked] = useState(false); // Local state for bookmark toggle
+  const listFontFamily = [
+    "font-sans", //"Arial, sans-serif",
+    "font-serif", //"Times New Roman, serif",
+    "font-mono", // "Courier New, monospace",
+  ];
 
-  let canViewContent =
-    userId === story?.authorId ||
-    isPaid ||
-    Number(chapter?.chapterNumber) < MAX_CHAPTER_CAN_VIEW;
+  const [fontSize, setFontSize] = useState(
+    localStorage.getItem("fontSize") || 15
+  );
+  const [lineHeight, setLineHeight] = useState(
+    localStorage.getItem("lineHeight") || 1.5
+  );
+  const [fontFamily, setFontFamily] = useState(
+    localStorage.getItem("fontFamily") || "font-sans"
+  );
+  const [showError, setShowError] = useState(false); // Control error visibility
 
   const breadcrumbItems = [
     { title: "Trang chủ", href: "/" },
     {
       title: story?.title,
-      href: `/story/${slugify(story?.title || "")}-${story?.id}`,
+      href: `/story/author/${slugify(story?.title || "")}-${story?.id}`,
     },
     {
       title: `Chương ${convertNumber(chapter?.chapterNumber)}: ${
@@ -213,58 +140,15 @@ const ChapterPage = () => {
             {breadcrumbItems}
           </Breadcrumbs>
         </Center>
-        {/* Action Buttons */}
         <Center className="mb-12">
           <Group gap="xl">
-            <Box className="text-center">
-              <CopyButton value={window.location.href} timeout={2000}>
-                {({ copied, copy }) => (
-                  <Tooltip
-                    label={copied ? "Copied" : "Copy"}
-                    withArrow
-                    styles={{
-                      tooltip: {
-                        backgroundColor: "#228be6",
-                        color: "white",
-                      },
-                    }}
-                  >
-                    <Button
-                      onClick={copy}
-                      leftSection={
-                        copied ? (
-                          <IconCheck
-                            color="rgb(107 114 128 / var(--tw-text-opacity, 1))"
-                            size={32}
-                          />
-                        ) : (
-                          <IconCopy
-                            color="rgb(107 114 128 / var(--tw-text-opacity, 1))"
-                            size={32}
-                          />
-                        )
-                      }
-                      styles={{
-                        root: {
-                          "--button-hover": "none",
-                          "--button-bg": "none",
-                        },
-                      }}
-                    ></Button>
-                  </Tooltip>
-                )}
-              </CopyButton>
-              <Text size="xl" fw={700} c="gray.7">
-                Share
-              </Text>
-            </Box>
             {/* Previous Chapter Button */}
             <Link
               to={
                 previousChapter
-                  ? `/story/${slugify(story?.title || "")}-${
-                      story?.id
-                    }/${slugify(previousChapter?.title)}-${previousChapter?.id}`
+                  ? `/chapter/author/${slugify(story.title)}-${storyId}/${slugify(
+                      previousChapter?.title
+                    )}-${previousChapter?.id}`
                   : "#"
               }
               className={`text-center ${
@@ -301,9 +185,9 @@ const ChapterPage = () => {
                     className="text-xl font-bold !p-0 overflow-hidden my-1"
                   >
                     <Link
-                      to={`/story/${slugify(story?.title || "")}-${
-                        story?.id
-                      }/${slugify(chap?.title)}-${chap?.id}`}
+                      to={`/chapter/author/${slugify(story.title)}-${storyId}/${slugify(chap.title)}-${
+                        chap.id
+                      }`}
                     >
                       <Box className="block px-2 py-1 w-full border rounded border-gray-200 hover:bg-gray-200">
                         <Text truncate="end" size="lg" className="font-bold">
@@ -321,9 +205,9 @@ const ChapterPage = () => {
             <Link
               to={
                 nextChapter
-                  ? `/story/${slugify(story?.title || "")}-${
-                      story?.id
-                    }/${slugify(nextChapter?.title)}-${nextChapter?.id}`
+                  ? `/chapter/author/${slugify(story.title)}-${storyId}/${slugify(
+                      nextChapter?.title
+                    )}-${nextChapter?.id}`
                   : "#"
               }
               className={`text-center ${
@@ -348,18 +232,7 @@ const ChapterPage = () => {
                 Cấu hình
               </Text>
             </UnstyledButton>
-            <UnstyledButton
-              onClick={() =>
-                window.scrollTo({ top: bookmark?.position, behavior: "smooth" })
-              }
-            >
-              <Center>
-                <IconBookmark size={32} className="text-gray-500" />
-              </Center>
-              <Text size="xl" fw={700} c="gray.7">
-                Đọc tiếp
-              </Text>
-            </UnstyledButton>
+
             <Modal opened={opened} onClose={close} title="Cấu hình trang đọc">
               <table>
                 <tbody>
@@ -439,51 +312,32 @@ const ChapterPage = () => {
             colorScheme === "dark" ? "bg-neutral-700" : "bg-white"
           }`}
         >
-          {canViewContent ? (
-            <Text
-              component="div"
-              fw={400}
-              lh={lineHeight}
-              mih={"20vh"}
-              fontFamily={fontFamily}
-              size={fontSize}
-              className="text-wrap font-medium"
+          <Text
+            component="div"
+            fw={400}
+            lh={lineHeight}
+            mih={"20vh"}
+            fontFamily={fontFamily}
+            size={fontSize}
+            className="text-wrap font-medium"
+          >
+            <p
+              className={`${fontFamily} select-none ${
+                colorScheme === "dark" ? "text-white" : "text-black"
+              }`}
             >
-              <p
-                className={`${fontFamily} select-none ${
-                  colorScheme === "dark" ? "text-white" : "text-black"
-                }`}
-              >
-                {parse(formattedContent)}
-              </p>
-            </Text>
-          ) : (
-            // Display message or purchase prompt if content cannot be viewed
-            <Box className="text-center py-10">
-              <Text size="xl" c="dimmed" fw={500}>
-                Nội dung này bị khóa. Hãy mua truyện để xem không giới hạn nội
-                dung tiếp theo của truyện này.
-              </Text>
-              <Button
-                variant="light"
-                color="blue"
-                className="mt-4"
-                size="lg"
-                onClick={handleBuyStory}
-              >
-                Mua truyện
-              </Button>
-            </Box>
-          )}
+              {parse(formattedContent)}
+            </p>
+          </Text>
         </Box>
         <Center className="mt-12">
           <Group gap="xl">
             <Link
               to={
                 previousChapter
-                  ? `/story/${slugify(story?.title || "")}-${
-                      story?.id
-                    }/${slugify(previousChapter?.title)}-${previousChapter?.id}`
+                  ? `/chapter/author/${slugify(story.title)}-${storyId}/${slugify(
+                      previousChapter?.title
+                    )}-${previousChapter?.id}`
                   : "#"
               }
               className={`text-center ${
@@ -520,9 +374,9 @@ const ChapterPage = () => {
                     className="text-xl font-bold !p-0 overflow-hidden my-1"
                   >
                     <Link
-                      to={`/story/${slugify(story?.title || "")}-${
-                        story?.id
-                      }/${slugify(chap?.title)}-${chap?.id}`}
+                      to={`/chapter/author/${slugify(story.title)}-${storyId}/${slugify(chap.title)}-${
+                        chap.id
+                      }`}
                     >
                       <Box className="block px-2 py-1 w-full border rounded border-gray-200 hover:bg-gray-200">
                         <Text truncate="end" size="lg" className="font-bold">
@@ -538,9 +392,9 @@ const ChapterPage = () => {
             <Link
               to={
                 nextChapter
-                  ? `/story/${slugify(story?.title || "")}-${
-                      story?.id
-                    }/${slugify(nextChapter?.title)}-${nextChapter?.id}`
+                  ? `/chapter/author/${slugify(story.title)}-${storyId}/${slugify(
+                      nextChapter?.title
+                    )}-${nextChapter?.id}`
                   : "#"
               }
               className={`text-center ${
@@ -562,4 +416,4 @@ const ChapterPage = () => {
   );
 };
 
-export default ChapterPage;
+export default AuthorChapterPage;

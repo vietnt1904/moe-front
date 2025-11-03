@@ -4,7 +4,16 @@ import Autoplay from "embla-carousel-autoplay";
 import { Button, Text } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import StoryCard from "../components/StoryCard";
-import { useProposalStories, useStories, useStoriesAllTopics, useTrendingStories } from "../hooks/useStory";
+import {
+  useProposalStories,
+  useStories,
+  useStoriesAllTopics,
+  useTop10Stories,
+} from "../hooks/useStory";
+import { Link } from "react-router-dom";
+import { useEffect } from "react";
+import socket from "../lib/socket";
+import { useBanners } from "../hooks/useBanner";
 
 const HomePage = () => {
   const page = 1;
@@ -14,12 +23,27 @@ const HomePage = () => {
   const autoplayItem = useRef(Autoplay({ delay: 1000 }));
   const autoplayItem2 = useRef(Autoplay({ delay: 1500 }));
   const isLargeScreen = useMediaQuery("(min-width: 1024px)");
+  const {data: banners} = useBanners();
   const { data: storyData } = useStories(page, limit);
-  const stories = storyData?.data || [];
+  const stories = banners?.data.length > 0 ? banners?.data : storyData?.data || [];
   // const totalPages = storyData?.totalPages || 1;
-  const {data: trendingStories} = useTrendingStories();
+  const { data: trendingStories } = useTop10Stories();
   const { data: topics } = useStoriesAllTopics();
-  const {data: proposalStories} = useProposalStories();
+  const { data: proposalStories } = useProposalStories();
+
+  useEffect(() => {
+    socket.on("connection", () => {
+      console.log("connect socket");
+    });
+
+    socket.on("welcome", (msg) => {
+      console.log("first emit from backend", msg);
+    });
+
+    return () => {
+      socket.off("welcome");
+    };
+  }, []);
 
   return (
     <div className="w-9/12 items-center mx-auto my-12">
@@ -48,11 +72,6 @@ const HomePage = () => {
       <div>
         <div className="my-6 flex items-center">
           <p className="text-2xl font-bold">Trending</p>
-          <img
-            src="https://cdn-icons-png.flaticon.com/512/25/25231.png"
-            alt="trending"
-            className="w-6 h-6 mx-6"
-          />
         </div>
         <Carousel
           height={"auto"}
@@ -78,11 +97,6 @@ const HomePage = () => {
       <div>
         <div className="my-6 flex items-center">
           <p className="text-2xl font-bold">Đề cử</p>
-          <img
-            src="https://png.pngtree.com/png-vector/20221227/ourmid/pngtree-orange-cartoon-cute-flame-png-image_6510196.png"
-            alt="trending"
-            className="w-6 h-6 mx-2"
-          />
         </div>
         <Carousel
           className="w-5/6 mx-auto"
@@ -111,51 +125,42 @@ const HomePage = () => {
       </div>
       <div>
         {topics?.map((topic) => (
-          <>
-            <div>
-              <div className="my-6 flex items-center">
-                <p className="text-2xl font-bold">{topic?.name}</p>
-                <img
-                  src="https://png.pngtree.com/png-vector/20221227/ourmid/pngtree-orange-cartoon-cute-flame-png-image_6510196.png"
-                  alt="trending"
-                  className="w-6 h-6 mx-2"
-                />
-              </div>
-              {topic?.stories?.length > 0 ? (
-                <Carousel
-                  height={"auto"}
-                  slideSize={{ base: "50%", md: "33.333333%", lg: "25%" }}
-                  slideGap={{ base: "md", sm: "md" }}
-                  loop
-                  controlSize={40}
-                  classNames={{
-                    control: "w-10 h-10 -ml-2 -mr-2",
-                  }}
-                  align={"start"}
-                  className="px-16"
-                >
-                  {topic?.stories?.map((item) => (
-                    <Carousel.Slide key={item.id}>
-                      <StoryCard story={item} />
-                    </Carousel.Slide>
-                  ))}
-                </Carousel>
-              ) : (
-                <>
-                  <div>
-                    <Text
-                      size="xl"
-                      fw={"600"}
-                      c={"black"}
-                      className="text-center"
-                    >
-                      Hiện chưa có truyện nào thuộc thể loại này.
-                    </Text>
-                  </div>
-                </>
-              )}
+          <div key={topic.id}>
+            <div className="my-6 flex items-center">
+              <Link
+                to={`/search?topic=${topic?.id}`}
+                className="text-2xl font-bold cursor-pointer"
+              >
+                {topic?.name}
+              </Link>
             </div>
-          </>
+            {topic?.stories?.length > 0 ? (
+              <Carousel
+                height={"auto"}
+                slideSize={{ base: "50%", md: "33.333333%", lg: "25%" }}
+                slideGap={{ base: "md", sm: "md" }}
+                loop
+                controlSize={40}
+                classNames={{
+                  control: "w-10 h-10 -ml-2 -mr-2",
+                }}
+                align={"start"}
+                className="px-16"
+              >
+                {topic?.stories?.map((item) => (
+                  <Carousel.Slide key={item.id}>
+                    <StoryCard story={item} />
+                  </Carousel.Slide>
+                ))}
+              </Carousel>
+            ) : (
+              <div>
+                <Text size="xl" fw={"600"} className="text-center">
+                  Hiện chưa có truyện nào thuộc thể loại này.
+                </Text>
+              </div>
+            )}
+          </div>
         ))}
       </div>
       <div className="flex justify-center mt-8">

@@ -1,3 +1,5 @@
+import { jwtDecode } from "jwt-decode";
+
 export const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString("en-US", {
     year: "numeric",
@@ -23,7 +25,7 @@ export const getIdTitleFromUrl = (url) => {
   const parts = url?.split("-");
   const id = Number(parts[parts.length - 1]);
   const slug = parts.slice(0, parts.length - 1).join("-");
-  return {id, slug};
+  return { id, slug };
 };
 
 export const getIdFromUrl = (url) => {
@@ -60,4 +62,34 @@ export const updateTime = (updatedAt) => {
   if (minutes > 0) return format(minutes, "phút");
 
   return "vừa xong";
+};
+
+export const debounce = (func, delay) => {
+  let timer;
+  return (...args) => {
+    if (timer) {
+      clearTimeout(timer);
+    }
+    timer = setTimeout(() => {
+      func(...args);
+    }, delay);
+  };
+};
+
+export const convertNumber = (value) => {
+  const num = Number(value);
+  return Number.isInteger(num) ? num : num;
+};
+
+export const getUserId = () => {
+  const token = localStorage.getItem("token");
+  if (!token || token.trim() === "") return null; // hoặc throw Error("No token found")
+
+  try {
+    const operatorData = jwtDecode(token);
+    return operatorData?.id;
+  } catch (error) {
+    console.error("Invalid token:", error);
+    return null;
+  }
 };

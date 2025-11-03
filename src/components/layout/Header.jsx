@@ -1,11 +1,13 @@
 import {
   ActionIcon,
   Avatar,
+  Indicator,
   Menu,
   rem,
   Text,
   TextInput,
   UnstyledButton,
+  useMantineColorScheme,
   useMantineTheme,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
@@ -19,26 +21,34 @@ import { IconHelp } from "@tabler/icons-react";
 import { IconBell } from "@tabler/icons-react";
 import { IconHistory } from "@tabler/icons-react";
 import { IconBookmark } from "@tabler/icons-react";
-import { IconSwitchHorizontal } from "@tabler/icons-react";
 import { IconCheck } from "@tabler/icons-react";
 import { IconEdit } from "@tabler/icons-react";
 import { IconChevronDown } from "@tabler/icons-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTopic } from "../../hooks/useTopic";
 import RequireLogin from "../RequireLogin";
+import { IconMoon } from "@tabler/icons-react";
+import { IconSun } from "@tabler/icons-react";
+import { useUnreadNotifications } from "../../hooks/useNotification";
+import { getUserId } from "../../utils";
 
 const Header = () => {
   const navigate = useNavigate();
   const { data: topics } = useTopic();
 
+  const { colorScheme, toggleColorScheme } = useMantineColorScheme();
+  const dark = colorScheme === "dark";
+
   const textColor = "black";
 
+  const userId = getUserId();
+
   const checkUser = localStorage.getItem("user");
-  let user = null;
+  let user = {};
   if (checkUser) {
     user = JSON.parse(checkUser);
   }
-  const isAuthenticated = user !== null;
+  const isAuthenticated = user?.id !== null && user?.id !== undefined && user?.id !== 1 && user?.id === userId;
   // const user = {
   //   name: "Current User",
   //   avatarUrl:
@@ -47,6 +57,7 @@ const Header = () => {
 
   const [opened, { toggle }] = useDisclosure(false);
   const [opened2, { open, close }] = useDisclosure(false);
+  const {data: unread } = useUnreadNotifications(userId);
 
   const theme = useMantineTheme();
 
@@ -69,13 +80,13 @@ const Header = () => {
       paddingRight: rem(16), // px-4
       margin: `${rem(4)} ${rem(8)}`, // my-1 mx-2 approximately
       width: `calc(100% - ${rem(16)})`, // custom_width_a equivalent
-      "&[data-hovered]": {
+      "&[dataHovered]": {
         backgroundColor: theme.colors.blue[5], // hover:bg-blue-500
-        color: theme.white, // Ensure text remains white on hover
+        color: theme.white,
       },
     },
     divider: {
-      borderColor: "white",
+      borderColor: theme.white,
       borderWidth: rem(2),
       margin: `${rem(8)} ${rem(8)}`, // my-2 mx-2 approx
       width: `calc(100% - ${rem(16)})`, // Match item width minus padding
@@ -84,23 +95,27 @@ const Header = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("user");
+    localStorage.removeItem("token");
     navigate("/");
   };
 
+  const setDarkMode = () => {
+    toggleColorScheme();
+  };
+
   return (
-    <div className="bg-[linear-gradient(141.39deg,_#9AFDF7_3.43%,_rgb(212,239,244)_86.18%)] shadow-[0px_4px_4px_rgba(0,0,0,0.5)]">
+    <div className="shadow-[0px_4px_4px_rgba(0,0,0,0.5)]">
       <div className="w-9/12 mx-auto py-4 flex justify-between items-center align-bottom">
-        <a
-          href="/"
-          className="text-3xl lg:text-4xl font-black italic flex text-gray-900 no-underline mr-12"
+        <Link
+          to="/"
+          className="text-3xl lg:text-4xl font-black italic flex no-underline mr-12"
         >
           <img
             src="/images/home_image.png"
             alt="logo_image"
-            className="w-12 h-12 mr-2"
+            className="w-12 h-12"
           />
-          Ganymede
-        </a>
+        </Link>
 
         <button
           onClick={toggle}
@@ -110,7 +125,38 @@ const Header = () => {
         </button>
 
         <div className="hidden lg:flex flex-grow justify-between items-center">
-          <div className="flex space-x-8">
+          {/* tìm kiếm */}
+          <div className="w-1/3 flex flex-col my-auto">
+            <form action="/search" method="GET" className="w-full">
+              <TextInput
+                placeholder="Tìm kiếm"
+                name="title"
+                className="flex-grow search-story mr-4"
+                classNames={
+                  dark && {
+                    input: {
+                      outline: "1px solid red",
+                    },
+                  }
+                }
+                rightSection={
+                  <ActionIcon
+                    type="submit"
+                    variant="transparent"
+                    aria-label="Submit search"
+                  >
+                    <IconSearch
+                      className="bg-gray-200 rounded"
+                      size={24}
+                      stroke={2.5}
+                    />
+                  </ActionIcon>
+                }
+              />
+            </form>
+          </div>
+          <div className="flex gap-8">
+            {/* thể loại */}
             <Menu
               shadow="md"
               width={240}
@@ -119,7 +165,7 @@ const Header = () => {
               position="bottom-start"
             >
               <Menu.Target>
-                <p className="text-lg lg:text-2xl font-extrabold text-gray-900 flex italic mx-4 items-center hover:cursor-pointer">
+                <p className="text-md lg:text-lg font-extrabold flex italic items-center hover:cursor-pointer">
                   Thể loại
                 </p>
               </Menu.Target>
@@ -138,7 +184,9 @@ const Header = () => {
                   >
                     <Link
                       to={`/search?topic=${topic?.id}`}
-                      className="text-dark no-underline lg:text-lg"
+                      className={`${
+                        dark ? "text-black" : "text-dark"
+                      } no-underline lg:text-lg`}
                     >
                       {topic?.name}
                     </Link>
@@ -146,34 +194,35 @@ const Header = () => {
                 ))}
               </Menu.Dropdown>
             </Menu>
+            {/* viết truyện */}
             {isAuthenticated ? (
               <Link
                 to={"/writestory"}
-                className="text-lg lg:text-2xl font-extrabold text-gray-900 no-underline italic"
+                className="text-md lg:text-lg font-extrabold no-underline italic"
               >
                 Viết truyện
               </Link>
             ) : (
               <Link
-                className="text-lg lg:text-2xl font-extrabold text-gray-900 no-underline italic"
+                className="text-md lg:text-lg font-extrabold no-underline italic"
                 onClick={open}
               >
                 Viết truyện
               </Link>
             )}
             <RequireLogin open={opened2} close={close} />
-
+            {/* tin tức */}
             {isAuthenticated ? (
               <Link
                 to="/setting?tab=payment"
-                className="text-lg lg:text-2xl font-extrabold text-gray-900 no-underline italic"
+                className="text-md lg:text-lg font-extrabold no-underline italic"
               >
                 Nạp xu
               </Link>
             ) : (
               <Link
-                to="/news"
-                className="text-lg lg:text-2xl font-extrabold text-gray-900 no-underline italic"
+                to="/notification"
+                className="text-md lg:text-lg font-extrabold no-underline italic"
               >
                 Tin tức
               </Link>
@@ -182,22 +231,13 @@ const Header = () => {
 
           {/* User Menu / Login */}
           <div className="flex items-center space-x-4">
-            <ActionIcon
-              component="a"
-              href="/setting?tab=payment" // Replace with premium link
-              variant="transparent"
-              size="xl" // Corresponds to h-12 w-12 approx
-            >
+            {/* <Link to={"/setting?tab=payment"}>
               <img
                 className="object-contain h-8 w-8 lg:h-10 lg:w-10"
                 src="/images/Premium.png"
                 alt="Premium item"
               />
-              {/* Or use IconPremiumRights */}
-              {/* <IconPremiumRights size={32} stroke={1.5} /> */}
-            </ActionIcon>
-
-            {/* Search Dropdown */}
+            </Link> */}
             <Menu
               shadow="md"
               width={240}
@@ -206,39 +246,58 @@ const Header = () => {
               closeOnItemClick={false}
             >
               <Menu.Target>
-                <ActionIcon variant="transparent" size="xl">
-                  <img
-                    className="object-contain h-8 w-8 lg:h-10 lg:w-10"
-                    src="/images/Search.png"
-                    alt="Search icon"
-                  />
-                </ActionIcon>
-              </Menu.Target>
-              <Menu.Dropdown
-                p="xs"
-                className="!bg-transparent !border-none !shadow-none"
-              >
-                <form action="/search" method="GET" className="flex">
-                  <TextInput
-                    placeholder="Tìm kiếm"
-                    name="title"
-                    className="flex-grow search-story"
-                    rightSection={
-                      <ActionIcon
-                        type="submit"
-                        variant="transparent"
-                        aria-label="Submit search"
-                      >
-                        <IconSearch
-                          className="bg-gray-200 rounded"
-                          size={24}
-                          stroke={1.5}
-                        />
+                <Link to="notification">
+                  {unread > 0 ? (
+                    <Indicator inline size={20} offset={8} label={unread}>
+                      <ActionIcon variant="transparent" size="xl">
+                        <svg
+                          width="38"
+                          height="38"
+                          viewBox="0 0 38 38"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M9.50065 30.083V15.833C9.50065 13.3135 10.5015 10.8971 12.2831 9.11549C14.0647 7.3339 16.4811 6.33301 19.0007 6.33301C21.5202 6.33301 23.9366 7.3339 25.7182 9.11549C27.4998 10.8971 28.5007 13.3135 28.5007 15.833V30.083M9.50065 30.083H28.5007M9.50065 30.083H6.33398M28.5007 30.083H31.6673M17.4173 34.833H20.584"
+                            stroke={dark ? "white" : "black"}
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="M19.0013 6.33317C19.8758 6.33317 20.5846 5.62429 20.5846 4.74984C20.5846 3.87539 19.8758 3.1665 19.0013 3.1665C18.1269 3.1665 17.418 3.87539 17.418 4.74984C17.418 5.62429 18.1269 6.33317 19.0013 6.33317Z"
+                            stroke={dark ? "white" : "black"}
+                            strokeWidth="2"
+                          />
+                        </svg>
                       </ActionIcon>
-                    }
-                  />
-                </form>
-              </Menu.Dropdown>
+                    </Indicator>
+                  ) : (
+                    <ActionIcon variant="transparent" size="xl">
+                      <svg
+                        width="38"
+                        height="38"
+                        viewBox="0 0 38 38"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M9.50065 30.083V15.833C9.50065 13.3135 10.5015 10.8971 12.2831 9.11549C14.0647 7.3339 16.4811 6.33301 19.0007 6.33301C21.5202 6.33301 23.9366 7.3339 25.7182 9.11549C27.4998 10.8971 28.5007 13.3135 28.5007 15.833V30.083M9.50065 30.083H28.5007M9.50065 30.083H6.33398M28.5007 30.083H31.6673M17.4173 34.833H20.584"
+                          stroke={dark ? "white" : "black"}
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M19.0013 6.33317C19.8758 6.33317 20.5846 5.62429 20.5846 4.74984C20.5846 3.87539 19.8758 3.1665 19.0013 3.1665C18.1269 3.1665 17.418 3.87539 17.418 4.74984C17.418 5.62429 18.1269 6.33317 19.0013 6.33317Z"
+                          stroke={dark ? "white" : "black"}
+                          strokeWidth="2"
+                        />
+                      </svg>
+                    </ActionIcon>
+                  )}
+                </Link>
+              </Menu.Target>
             </Menu>
             {isAuthenticated && user ? (
               <Menu
@@ -252,8 +311,8 @@ const Header = () => {
                     <Avatar
                       src={user?.avatar}
                       alt="Account item"
-                      radius="xl" // rounded-full
-                      size="lg" // h-12 w-12 approx
+                      radius="xl"
+                      size="lg"
                       className="border-2 border-yellow-400"
                     />
                   </UnstyledButton>
@@ -279,11 +338,11 @@ const Header = () => {
                             fw={500}
                             className="flex items-center gap-1 text-gray"
                           >
-                            <p className="text-black">{user?.fullName}</p>
+                            <span className="text-black">{user?.fullName}</span>
                             <IconEdit
                               color={textColor}
                               size={14}
-                              stroke={1.5}
+                              stroke={2.5}
                             />
                           </Text>
                           <Text
@@ -293,7 +352,7 @@ const Header = () => {
                           >
                             <IconCheck
                               size={12}
-                              stroke={1.5}
+                              stroke={2.5}
                               className="text-green-500"
                             />
                             Verified
@@ -302,58 +361,43 @@ const Header = () => {
                       </div>
                     </Menu.Item>
                   </Link>
-
                   <Menu.Divider style={dropdownStyles.divider} />
-
-                  <Menu.Item
-                    leftSection={
-                      <IconSwitchHorizontal
-                        color={textColor}
-                        size={18}
-                        stroke={1.5}
-                      />
-                    }
-                    component="a"
-                    href="/"
-                    color={textColor} // Apply color dynamically to the Menu item
-                  >
-                    <p className={`text-${textColor}`}>Đổi tài khoản</p>
-                  </Menu.Item>
                   <Link to="setting">
                     <Menu.Item
                       leftSection={
                         <IconSettings
                           color={textColor}
                           size={18}
-                          stroke={1.5}
+                          stroke={2.5}
                         />
                       }
                       color={textColor}
                     >
-                      <p className={`text-${textColor}`}>Cài đặt</p>
+                      <span className={`text-${textColor}`}>Cài đặt</span>
                     </Menu.Item>
                   </Link>
 
                   <Menu.Divider style={dropdownStyles.divider} />
 
-                  <Link to="saved">
-                    <Menu.Item
-                      leftSection={
-                        <IconBookmark
-                          color={textColor}
-                          size={18}
-                          stroke={1.5}
-                        />
-                      }
-                      color={textColor}
-                    >
-                      <p className={`text-${textColor}`}>Đã lưu</p>
-                    </Menu.Item>
-                  </Link>
+                  <Menu.Item
+                    leftSection={
+                      dark ? (
+                        <IconSun color={textColor} size={18} stroke={2.5} />
+                      ) : (
+                        <IconMoon color={textColor} size={18} stroke={2.5} />
+                      )
+                    }
+                    color={textColor}
+                    onClick={setDarkMode}
+                  >
+                    <p className={`text-${textColor}`}>
+                      {dark ? "Chế độ sáng" : "Chế độ tối"}
+                    </p>
+                  </Menu.Item>
                   <Link to="profile?tab=myStories">
                     <Menu.Item
                       leftSection={
-                        <IconList color={textColor} size={18} stroke={1.5} />
+                        <IconList color={textColor} size={18} stroke={2.5} />
                       }
                       color={textColor}
                     >
@@ -363,7 +407,7 @@ const Header = () => {
                   <Link to="history">
                     <Menu.Item
                       leftSection={
-                        <IconHistory color={textColor} size={18} stroke={1.5} />
+                        <IconHistory color={textColor} size={18} stroke={2.5} />
                       }
                       color={textColor}
                     >
@@ -373,7 +417,7 @@ const Header = () => {
                   <Link to="/writestory">
                     <Menu.Item
                       leftSection={
-                        <IconPencil color={textColor} size={18} stroke={1.5} />
+                        <IconPencil color={textColor} size={18} stroke={2.5} />
                       }
                       color={textColor}
                     >
@@ -386,7 +430,7 @@ const Header = () => {
                   <Link to="notification">
                     <Menu.Item
                       leftSection={
-                        <IconBell color={textColor} size={18} stroke={1.5} />
+                        <IconBell color={textColor} size={18} stroke={2.5} />
                       }
                       color={textColor}
                     >
@@ -396,7 +440,7 @@ const Header = () => {
                   <Link to="message">
                     <Menu.Item
                       leftSection={
-                        <IconMessage color={textColor} size={18} stroke={1.5} />
+                        <IconMessage color={textColor} size={18} stroke={2.5} />
                       }
                       color={textColor}
                     >
@@ -406,7 +450,7 @@ const Header = () => {
                   <Link to="qa">
                     <Menu.Item
                       leftSection={
-                        <IconHelp color={textColor} size={18} stroke={1.5} />
+                        <IconHelp color={textColor} size={18} stroke={2.5} />
                       }
                       color={textColor}
                     >
@@ -419,7 +463,7 @@ const Header = () => {
                   {/* Logout - handle with a function */}
                   <Menu.Item
                     leftSection={
-                      <IconLogout color={textColor} size={32} stroke={1.5} />
+                      <IconLogout color={textColor} size={32} stroke={2.5} />
                     }
                     color={textColor}
                     onClick={() => handleLogout()}
@@ -440,10 +484,10 @@ const Header = () => {
                   <ActionIcon variant="transparent" size="xl" className="ml-4">
                     <img
                       className="object-contain h-8 w-8 lg:h-10 lg:w-10 rounded-full"
-                      src="/images/Account.png"
+                      src="/account.svg"
                       alt="Account icon"
                     />
-                    {/* <IconUserCircle size={32} stroke={1.5} /> */}
+                    {/* <IconUserCircle size={32} stroke={2.5} /> */}
                   </ActionIcon>
                 </Menu.Target>
                 <Menu.Dropdown>
@@ -493,7 +537,7 @@ const Header = () => {
               position="bottom-start"
             >
               <Menu.Target>
-                <p className="text-lg font-extrabold text-gray-900 flex items-center hover:cursor-pointer">
+                <p className="text-lg font-extrabold flex items-center hover:cursor-pointer">
                   Thể loại
                 </p>
               </Menu.Target>
@@ -519,21 +563,21 @@ const Header = () => {
             </Menu>
             <Link
               to="/poststory"
-              className="text-lg font-extrabold text-gray-900 no-underline italic"
+              className="text-lg font-extrabold no-underline italic"
             >
               Viết truyện
             </Link>
             {isAuthenticated ? (
               <Link
                 to="/setting?tab=payment"
-                className="text-lg font-extrabold text-gray-900 no-underline italic"
+                className="text-lg font-extrabold no-underline italic"
               >
                 Nạp xu
               </Link>
             ) : (
               <a
                 href="/news"
-                className="text-lg font-extrabold text-gray-900 no-underline italic"
+                className="text-lg font-extrabold no-underline italic"
               >
                 Tin tức
               </a>
@@ -554,7 +598,7 @@ const Header = () => {
                 alt="Premium item"
               />
               {/* Or use IconPremiumRights */}
-              {/* <IconPremiumRights size={32} stroke={1.5} /> */}
+              {/* <IconPremiumRights size={32} stroke={2.5} /> */}
             </ActionIcon>
             <Menu
               shadow="md"
@@ -570,7 +614,7 @@ const Header = () => {
                     src="/images/Search.png"
                     alt="Search icon"
                   />
-                  {/* <IconSearch size={32} stroke={1.5} /> */}
+                  {/* <IconSearch size={32} stroke={2.5} /> */}
                 </ActionIcon>
               </Menu.Target>
               <Menu.Dropdown
@@ -589,7 +633,7 @@ const Header = () => {
                         variant="transparent"
                         aria-label="Submit search"
                       >
-                        <IconSearch size={18} stroke={1.5} />
+                        <IconSearch size={18} stroke={2.5} />
                       </ActionIcon>
                     }
                   />
@@ -638,7 +682,7 @@ const Header = () => {
                           className="flex items-center gap-1 text-gray"
                         >
                           <p className="text-black">{user?.name}</p>
-                          <IconEdit color={textColor} size={14} stroke={1.5} />
+                          <IconEdit color={textColor} size={14} stroke={2.5} />
                         </Text>
                         <Text
                           c="dimmed"
@@ -647,7 +691,7 @@ const Header = () => {
                         >
                           <IconCheck
                             size={12}
-                            stroke={1.5}
+                            stroke={2.5}
                             className="text-green-500"
                           />
                           Verified
@@ -658,12 +702,12 @@ const Header = () => {
 
                   <Menu.Divider style={dropdownStyles.divider} />
 
-                  <Menu.Item
+                  {/* <Menu.Item
                     leftSection={
                       <IconSwitchHorizontal
                         color={textColor}
                         size={18}
-                        stroke={1.5}
+                        stroke={2.5}
                       />
                     }
                     component="a"
@@ -671,33 +715,35 @@ const Header = () => {
                     color={textColor} // Apply color dynamically to the Menu item
                   >
                     <p className={`text-${textColor}`}>Đổi tài khoản</p>
-                  </Menu.Item>
+                  </Menu.Item> */}
                   <Menu.Item
                     leftSection={
-                      <IconSettings color={textColor} size={18} stroke={1.5} />
+                      <IconSettings color={textColor} size={18} stroke={2.5} />
                     }
                     component="a"
                     href="/setting"
                     color={textColor}
                   >
-                    <p className={`text-${textColor}`}>Cài đặt</p>
+                    <span className={`text-${textColor}`}>Cài đặt</span>
                   </Menu.Item>
 
                   <Menu.Divider style={dropdownStyles.divider} />
 
                   <Menu.Item
                     leftSection={
-                      <IconBookmark color={textColor} size={18} stroke={1.5} />
+                      <IconBookmark color={textColor} size={18} stroke={2.5} />
                     }
                     component="a"
                     href="/saved"
                     color={textColor}
                   >
-                    <p className={`text-${textColor}`}>Đã lưu</p>
+                    <p className={`text-${textColor}`}>
+                      {dark ? "Chế độ sáng" : "Chế độ tối"}
+                    </p>
                   </Menu.Item>
                   <Menu.Item
                     leftSection={
-                      <IconList color={textColor} size={18} stroke={1.5} />
+                      <IconList color={textColor} size={18} stroke={2.5} />
                     }
                     component="a"
                     href="/mylists"
@@ -707,7 +753,7 @@ const Header = () => {
                   </Menu.Item>
                   <Menu.Item
                     leftSection={
-                      <IconHistory color={textColor} size={18} stroke={1.5} />
+                      <IconHistory color={textColor} size={18} stroke={2.5} />
                     }
                     component="a"
                     href="/history"
@@ -717,7 +763,7 @@ const Header = () => {
                   </Menu.Item>
                   <Menu.Item
                     leftSection={
-                      <IconPencil color={textColor} size={18} stroke={1.5} />
+                      <IconPencil color={textColor} size={18} stroke={2.5} />
                     }
                     component="a"
                     href="/poststory"
@@ -730,7 +776,7 @@ const Header = () => {
 
                   <Menu.Item
                     leftSection={
-                      <IconBell color={textColor} size={18} stroke={1.5} />
+                      <IconBell color={textColor} size={18} stroke={2.5} />
                     }
                     component="a"
                     href="/notifications"
@@ -740,7 +786,7 @@ const Header = () => {
                   </Menu.Item>
                   <Menu.Item
                     leftSection={
-                      <IconMessage color={textColor} size={18} stroke={1.5} />
+                      <IconMessage color={textColor} size={18} stroke={2.5} />
                     }
                     component="a"
                     href="/messages"
@@ -750,7 +796,7 @@ const Header = () => {
                   </Menu.Item>
                   <Menu.Item
                     leftSection={
-                      <IconHelp color={textColor} size={18} stroke={1.5} />
+                      <IconHelp color={textColor} size={18} stroke={2.5} />
                     }
                     component="a"
                     href="/qa"
@@ -764,7 +810,7 @@ const Header = () => {
                   {/* Logout - handle with a function */}
                   <Menu.Item
                     leftSection={
-                      <IconLogout color={textColor} size={32} stroke={1.5} />
+                      <IconLogout color={textColor} size={32} stroke={2.5} />
                     }
                     color={textColor}
                     onClick={() => handleLogout()}
@@ -788,7 +834,7 @@ const Header = () => {
                       src="/images/Account.png"
                       alt="Account icon"
                     />
-                    {/* <IconUserCircle size={32} stroke={1.5} /> */}
+                    {/* <IconUserCircle size={32} stroke={2.5} /> */}
                   </ActionIcon>
                 </Menu.Target>
                 <Menu.Dropdown>

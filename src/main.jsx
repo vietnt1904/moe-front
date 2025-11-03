@@ -6,8 +6,8 @@ import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
 import "@mantine/nprogress/styles.css";
 import "@mantine/notifications/styles.css";
-import { ModalsProvider } from '@mantine/modals';
-import { MantineProvider } from "@mantine/core";
+import { ModalsProvider } from "@mantine/modals";
+import { MantineProvider, createTheme } from "@mantine/core";
 import { DatesProvider } from "@mantine/dates";
 import { Notifications } from "@mantine/notifications";
 import { NavigationProgress } from "@mantine/nprogress";
@@ -16,13 +16,12 @@ import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import Layout from "./components/Layout.jsx";
 import ErrorPage from "./pages/ErrorPage.jsx";
 import HomePage from "./pages/HomePage.jsx";
-import '@mantine/carousel/styles.css';
+import "@mantine/carousel/styles.css";
 import LoginPage from "./pages/LoginPage.jsx";
 import SignUpPage from "./pages/SignUpPage.jsx";
 import WriteStory from "./pages/WriteStory.jsx";
 import SettingPage from "./pages/SettingPage.jsx";
 import HistoryPage from "./pages/HistoryPage.jsx";
-import MessagePage from "./pages/MessagePage.jsx";
 import LayoutHeader from "./components/LayoutHeader.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import NotificationPage from "./pages/NotificationPage.jsx";
@@ -33,140 +32,169 @@ import UpdateStoryPage from "./pages/UpdateStoryPage.jsx";
 import WriteChapter from "./pages/WriteChapter.jsx";
 import SearchStoryPage from "./pages/SearchStoryPage.jsx";
 import BuildingPage from "./pages/BuildingPagel.jsx";
+import ForgetPassword from "./pages/ForgetPasswordPage.jsx";
+import QAPage from "./pages/Q&A_Page.jsx";
+import AuthorChapterPage from "./pages/AuthorChapterPage.jsx";
+import BuyStoryPage from "./pages/BuyStoryPage.jsx";
 
 const router = createBrowserRouter([
-    {
-        path: "/",
-        element: <Layout />,
-        children: [
-            {
-                index: true,
-                element: <HomePage />,
-            },
-            {
-                path: "/story/:title",
-                element: <StoryPage />,
-            },
-            {
-                path: "/story/author/:title",
-                element: <UpdateStoryPage />,
-            },
-            {
-                path: "/story/author/:title/writechapter",
-                element: <WriteChapter />
-            },
-            {
-                path: "/search",
-                element: <SearchStoryPage />,
-            },
-            {
-                path: "/writestory",
-                element: <WriteStory />,
-            },
-            {
-                path: "/profile",
-                element: <ProfilePage />,
-            },
-            {
-                path: "/notification",
-                element: <BuildingPage />,
-                // element: <NotificationPage />,
-            },
-            {
-                path: "/author",
-                element: <AuthorPage />,
-            },
-            {
-                path: "/setting",
-                element: <SettingPage />,
-            },
-            {
-                path: "/history",
-                // element: <HistoryPage />,
-                element: <BuildingPage />,
-            },
-            {
-                path: "/story/:title/:chapter",
-                element: <ChapterPage />,
-            },
-            {
-                path: "/saved",
-                element: <BuildingPage />,
-            },
-            {
-                path: "/mylist",
-                element: <BuildingPage />,
-            },
-            {
-                path: "/qa",
-                element: <BuildingPage />,
-            },
-            {
-                path: "/*",
-                element: <ErrorPage />,
-            }
-        ],
-    },
-    {
-        path: "/",
-        element: <LayoutHeader />,
-        children: [
-            {
-                path: "/message",
-                // element: <MessagePage />,
-                element: <BuildingPage />,
-            }
-        ]
-    },
-    {
-        path: "/login",
-        element: <LoginPage />,
-    },
-    {
-        path: "/signup",
-        element: <SignUpPage />,
-    },
-    {
-        path: "/error",
-        element: <ErrorPage />,
-    },
-    {
+  {
+    path: "/",
+    element: <Layout />,
+    children: [
+      {
+        index: true,
+        element: <HomePage />,
+      },
+      {
+        path: "/story/:title",
+        element: <StoryPage />,
+      },
+      {
+        path: "/story/author/:title",
+        element: <UpdateStoryPage />,
+      },
+      {
+        path: "/story/author/:title/writechapter",
+        element: <WriteChapter />,
+      },
+      {
+        path: "/story/buy/:id",
+        element: <BuyStoryPage />,
+      },
+      {
+        path: "/search",
+        element: <SearchStoryPage />,
+      },
+      {
+        path: "/writestory",
+        element: <WriteStory />,
+      },
+      {
+        path: "/profile",
+        element: <ProfilePage />,
+      },
+      {
+        path: "/notification",
+        // element: <BuildingPage />,
+        element: <NotificationPage />,
+      },
+      {
+        path: "/author/:id",
+        element: <AuthorPage />,
+      },
+      {
+        path: "/setting",
+        element: <SettingPage />,
+      },
+      {
+        path: "/history",
+        element: <HistoryPage />,
+      },
+      {
+        path: "/story/:title/:chapter",
+        element: <ChapterPage />,
+      },
+      {
+        path: "/chapter/author/:story/:chapter",
+        element: <AuthorChapterPage />,
+      },
+      {
+        path: "/saved",
+        element: <BuildingPage />,
+      },
+      {
+        path: "/mylist",
+        element: <BuildingPage />,
+      },
+      {
+        path: "/qa",
+        element: <QAPage />,
+      },
+      {
         path: "/*",
         element: <ErrorPage />,
-    }
+      },
+    ],
+  },
+  {
+    path: "/",
+    element: <LayoutHeader />,
+    children: [
+      {
+        path: "/message",
+        // element: <MessagePage />,
+        element: <BuildingPage />,
+      },
+    ],
+  },
+  {
+    path: "/login",
+    element: <LoginPage />,
+  },
+  {
+    path: "/signup",
+    element: <SignUpPage />,
+  },
+  {
+    path: "/error",
+    element: <ErrorPage />,
+  },
+  {
+    path: "/forgetpassword",
+    element: <ForgetPassword />,
+  },
+  {
+    path: "/*",
+    element: <ErrorPage />,
+  },
 ]);
 
 const queryClient = new QueryClient({
-    defaultOptions: {
-        queries: {
-            staleTime: 30 * 1000,
-        },
+  defaultOptions: {
+    queries: {
+      staleTime: 1000,
     },
+  },
+});
+
+const colorScheme =
+  localStorage.getItem("mantine-color-scheme-value") &&
+  localStorage.getItem("mantine-color-scheme-value") === "dark"
+    ? "dark"
+    : "light";
+
+const theme = createTheme({
+  colorScheme
 });
 
 createRoot(document.getElementById("root")).render(
-    <StrictMode>
-        {/* khong can quan tam */}
-        <QueryClientProvider client={queryClient}>
-            {/* provider cua thu vien ui */}
-            <MantineProvider defaultColorScheme="light">
-                <ModalsProvider>
-
-                    <NavigationProgress />
-                    {/* toast thong bao */}
-                    <Notifications />
-                    {/* routes */}
-                    <DatesProvider
-                        settings={{
-                            locale: "vn",
-                            firstDayOfWeek: 1,
-                            timezone: "Asia/Ho_Chi_Minh",
-                        }}
-                    >
-                        <RouterProvider router={router} />
-                    </DatesProvider>
-                </ModalsProvider>
-            </MantineProvider>
-        </QueryClientProvider>
-    </StrictMode>,
+  <StrictMode>
+    {/* khong can quan tam */}
+    <QueryClientProvider client={queryClient}>
+      {/* provider cua thu vien ui */}
+      <MantineProvider
+        withGlobalStyles
+        withNormalizeCSS
+        theme={theme}
+        defaultColorScheme="light"
+      >
+        <ModalsProvider>
+          <NavigationProgress />
+          {/* toast thong bao */}
+          <Notifications />
+          {/* routes */}
+          <DatesProvider
+            settings={{
+              locale: "vn",
+              firstDayOfWeek: 1,
+              timezone: "Asia/Ho_Chi_Minh",
+            }}
+          >
+            <RouterProvider router={router} />
+          </DatesProvider>
+        </ModalsProvider>
+      </MantineProvider>
+    </QueryClientProvider>
+  </StrictMode>
 );
