@@ -173,7 +173,7 @@ function LoginPage() {
                     "Log in"
                   )}
                 </button>
-                <button
+                {/* <button
                   type="button" // Important: prevent form submission
                   className="w-full h-12 rounded-lg border-solid border-gray-400 border-2 my-3 bg-gray-100 hover:bg-gray-200 text-gray-800 flex items-center justify-center transition duration-150 ease-in-out"
                 >
@@ -183,7 +183,7 @@ function LoginPage() {
                     className="h-5 w-5"
                   />
                   <span className="pl-3 font-medium">Log in with Google</span>
-                </button>
+                </button> */}
 
                 <div className="text-center mt-4 text-sm">
                   <p className="text-gray-300 py-1">
