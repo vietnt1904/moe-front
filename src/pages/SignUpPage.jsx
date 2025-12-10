@@ -234,6 +234,7 @@ const SignUpPage = () => {
                   />
                   <button
                     type="button"
+                    tabIndex={-1}
                     onClick={togglePasswordVisibility}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 cursor-pointer"
                     aria-label={
@@ -268,6 +269,7 @@ const SignUpPage = () => {
                   />
                   <button
                     type="button"
+                    tabIndex={-1}
                     onClick={toggleConfirmPasswordVisibility}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 cursor-pointer"
                     aria-label={

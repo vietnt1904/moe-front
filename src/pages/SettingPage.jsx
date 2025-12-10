@@ -392,9 +392,11 @@ const UpdateInfoForm = ({ onUpdateClick }) => {
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (event) => {
-    setLoading(true);
     event.preventDefault();
-    if (!validateForm()) return;
+    if (!validateForm() || Object.keys(errors).length > 0) {
+      return ;
+    }
+    setLoading(true);
     const form = prepareUpdateData(formData);
     const user = await UserService.updatepInfor(userId, form);
     if (user?.success === false) {

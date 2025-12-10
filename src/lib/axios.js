@@ -20,7 +20,6 @@ instance.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
       const userId = getUserId();
-      console.log("userId in axios", userId);
       if (userId) {
         config.headers.userId = userId;
       } else {
@@ -38,7 +37,6 @@ instance.interceptors.request.use(
 // Response intercepter.
 instance.interceptors.response.use(
   (response) => {
-    console.log(response);
     return response;
   },
   (error) => {
